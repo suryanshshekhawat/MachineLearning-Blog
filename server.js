@@ -45,7 +45,7 @@ function sanitizeText(value, maxLen) {
 
 // "notes" keeps its original flat key (id) so existing data isn't touched.
 // Any other kind (e.g. "projects") gets namespaced as "kind:id" so it can't collide.
-const ALLOWED_KINDS = new Set(["notes", "projects"]);
+const ALLOWED_KINDS = new Set(["notes", "projects", "articles"]);
 function storageKey(kind, id) {
   return kind === "notes" ? id : `${kind}:${id}`;
 }

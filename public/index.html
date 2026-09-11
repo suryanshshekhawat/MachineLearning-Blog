@@ -33,9 +33,15 @@
   </section>
 
   <section id="articles" class="panel">
-    <ul class="entry-list">
-      <li class="entry-placeholder">No articles published yet — check back soon.</li>
-    </ul>
+    <div id="articles-list" class="notes-list"></div>
+
+    <div id="article-detail" class="notes-detail" hidden>
+      <button id="back-to-articles" class="back-link">&larr; Back to articles</button>
+      <h3 id="article-title" class="note-title"></h3>
+      <div id="article-downloads" class="note-downloads"></div>
+      <div id="article-pdf-viewer" class="pdf-viewer"></div>
+      <div id="article-comments" class="comments"></div>
+    </div>
   </section>
 
   <section id="projects" class="panel">

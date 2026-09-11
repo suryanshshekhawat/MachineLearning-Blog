@@ -13,6 +13,14 @@ const pdfViewerEl = document.getElementById("note-pdf-viewer");
 const commentsEl = document.getElementById("note-comments");
 const backToNotesBtn = document.getElementById("back-to-notes");
 
+const articlesListEl = document.getElementById("articles-list");
+const articleDetailEl = document.getElementById("article-detail");
+const articleTitleEl = document.getElementById("article-title");
+const articleDownloadsEl = document.getElementById("article-downloads");
+const articlePdfViewerEl = document.getElementById("article-pdf-viewer");
+const articleCommentsEl = document.getElementById("article-comments");
+const backToArticlesBtn = document.getElementById("back-to-articles");
+
 const projectsListEl = document.getElementById("projects-list");
 const projectDetailEl = document.getElementById("project-detail");
 const projectNavEl = document.getElementById("project-nav");
@@ -26,8 +34,6 @@ if (window.pdfjsLib) {
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 }
-
-let notesIndex = null;
 
 async function renderPdfInto(container, url, tokenHolder) {
   const token = ++tokenHolder.value;
@@ -58,11 +64,6 @@ async function renderPdfInto(container, url, tokenHolder) {
     const ctx = canvas.getContext("2d");
     await page.render({ canvasContext: ctx, viewport }).promise;
   }
-}
-
-const notePdfToken = { value: 0 };
-function renderPdf(url) {
-  return renderPdfInto(pdfViewerEl, url, notePdfToken);
 }
 
 async function fetchJSON(url, opts) {
@@ -300,83 +301,106 @@ function renderComments(kind, id, containerEl) {
   reloadComments(kind, id, listEl);
 }
 
-async function loadNotesIndex() {
-  if (notesIndex) return notesIndex;
-  const res = await fetch("content/notes.json");
-  notesIndex = await res.json();
-  return notesIndex;
-}
+// Shared by any section that's just "a list of PDFs with downloads and comments"
+// (notes, articles). Projects are structurally different (composed blocks), so
+// they get their own logic further down.
+function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloadsEl, pdfViewerEl, commentsEl, backBtn }) {
+  let index = null;
+  const pdfToken = { value: 0 };
 
-function renderNotesList(notes) {
-  notesListEl.innerHTML = notes.map(note => `
-    <button class="note-item" data-note-id="${note.id}">
-      <p class="note-item-title">${note.title}</p>
-      <p class="note-item-meta">${note.date}</p>
-      <p class="note-item-summary">${note.summary}</p>
-    </button>
-  `).join("");
-
-  notesListEl.querySelectorAll(".note-item").forEach(btn => {
-    btn.addEventListener("click", () => {
-      location.hash = `#notes/${btn.dataset.noteId}`;
-    });
-  });
-}
-
-async function showNote(noteId) {
-  const notes = await loadNotesIndex();
-  const note = notes.find(n => n.id === noteId);
-  if (!note) {
-    notesListEl.hidden = false;
-    notesDetailEl.hidden = true;
-    return;
+  async function loadIndex() {
+    if (!index) index = await fetch(contentUrl).then(r => r.json());
+    return index;
   }
 
-  noteTitleEl.textContent = note.title;
+  function renderList(items) {
+    listEl.innerHTML = items.map(item => `
+      <button class="note-item" data-item-id="${item.id}">
+        <p class="note-item-title">${item.title}</p>
+        <p class="note-item-meta">${item.date}</p>
+        <p class="note-item-summary">${item.summary}</p>
+      </button>
+    `).join("");
 
-  noteDownloadsEl.innerHTML = "";
-  if (note.pdf) {
-    noteDownloadsEl.innerHTML += `<a href="${note.pdf}" download data-download-type="pdf">Download PDF <span class="download-count" data-count-type="pdf"></span></a>`;
-  }
-  if (note.zip) {
-    noteDownloadsEl.innerHTML += `<a href="${note.zip}" download data-download-type="zip">Download LaTeX source (.zip) <span class="download-count" data-count-type="zip"></span></a>`;
-  }
-
-  noteDownloadsEl.querySelectorAll("a[data-download-type]").forEach(link => {
-    link.addEventListener("click", () => trackDownload("notes", noteId, link.dataset.downloadType));
-  });
-
-  fetchJSON(`/api/notes/${noteId}/downloads`)
-    .then(counts => {
-      noteDownloadsEl.querySelectorAll("[data-count-type]").forEach(el => {
-        const count = counts[el.dataset.countType] || 0;
-        el.textContent = `(${count})`;
+    listEl.querySelectorAll(".note-item").forEach(btn => {
+      btn.addEventListener("click", () => {
+        location.hash = `#${kind}/${btn.dataset.itemId}`;
       });
-    })
-    .catch(() => {});
-
-  notesListEl.hidden = true;
-  notesDetailEl.hidden = false;
-
-  if (note.pdf) {
-    renderPdf(note.pdf);
+    });
   }
 
-  renderComments("notes", noteId, commentsEl);
+  async function showItem(id) {
+    const items = await loadIndex();
+    const item = items.find(x => x.id === id);
+    if (!item) {
+      listEl.hidden = false;
+      detailEl.hidden = true;
+      return;
+    }
+
+    titleEl.textContent = item.title;
+
+    downloadsEl.innerHTML = "";
+    if (item.pdf) {
+      downloadsEl.innerHTML += `<a href="${item.pdf}" download data-download-type="pdf">Download PDF <span class="download-count" data-count-type="pdf"></span></a>`;
+    }
+    if (item.zip) {
+      downloadsEl.innerHTML += `<a href="${item.zip}" download data-download-type="zip">Download LaTeX source (.zip) <span class="download-count" data-count-type="zip"></span></a>`;
+    }
+    downloadsEl.querySelectorAll("a[data-download-type]").forEach(link => {
+      link.addEventListener("click", () => trackDownload(kind, id, link.dataset.downloadType));
+    });
+    fetchJSON(`/api/${kind}/${id}/downloads`)
+      .then(counts => {
+        downloadsEl.querySelectorAll("[data-count-type]").forEach(el => {
+          el.textContent = `(${counts[el.dataset.countType] || 0})`;
+        });
+      })
+      .catch(() => {});
+
+    listEl.hidden = true;
+    detailEl.hidden = false;
+
+    if (item.pdf) renderPdfInto(pdfViewerEl, item.pdf, pdfToken);
+    renderComments(kind, id, commentsEl);
+  }
+
+  async function enterList() {
+    renderList(await loadIndex());
+    listEl.hidden = false;
+    detailEl.hidden = true;
+    pdfToken.value++;
+    pdfViewerEl.innerHTML = "";
+    commentsEl.innerHTML = "";
+  }
+
+  backBtn.addEventListener("click", () => { location.hash = `#${kind}`; });
+
+  return { showItem, enterList };
 }
 
-async function enterNotesList() {
-  const notes = await loadNotesIndex();
-  renderNotesList(notes);
-  notesListEl.hidden = false;
-  notesDetailEl.hidden = true;
-  notePdfToken.value++;
-  pdfViewerEl.innerHTML = "";
-  commentsEl.innerHTML = "";
-}
+const notesLibrary = createPdfLibrary({
+  kind: "notes",
+  contentUrl: "content/notes.json",
+  listEl: notesListEl,
+  detailEl: notesDetailEl,
+  titleEl: noteTitleEl,
+  downloadsEl: noteDownloadsEl,
+  pdfViewerEl: pdfViewerEl,
+  commentsEl: commentsEl,
+  backBtn: backToNotesBtn,
+});
 
-backToNotesBtn.addEventListener("click", () => {
-  location.hash = "#notes";
+const articlesLibrary = createPdfLibrary({
+  kind: "articles",
+  contentUrl: "content/articles.json",
+  listEl: articlesListEl,
+  detailEl: articleDetailEl,
+  titleEl: articleTitleEl,
+  downloadsEl: articleDownloadsEl,
+  pdfViewerEl: articlePdfViewerEl,
+  commentsEl: articleCommentsEl,
+  backBtn: backToArticlesBtn,
 });
 
 let projectsIndex = null;
@@ -669,14 +693,22 @@ async function route() {
   const validSection = SECTIONS.includes(section) ? section : DEFAULT_SECTION;
 
   showPanel(validSection);
-  document.body.classList.toggle("note-reading", validSection === "notes" && !!sub);
+  document.body.classList.toggle("note-reading", (validSection === "notes" || validSection === "articles") && !!sub);
   document.body.classList.toggle("project-reading", validSection === "projects" && !!sub);
 
   if (validSection === "notes") {
     if (sub) {
-      await showNote(sub);
+      await notesLibrary.showItem(sub);
     } else {
-      await enterNotesList();
+      await notesLibrary.enterList();
+    }
+  }
+
+  if (validSection === "articles") {
+    if (sub) {
+      await articlesLibrary.showItem(sub);
+    } else {
+      await articlesLibrary.enterList();
     }
   }
 

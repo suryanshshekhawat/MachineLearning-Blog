@@ -1,0 +1,10 @@
+[
+  {
+    "id": "cancelling-sequences",
+    "title": "Introducing Cancelling Sequences, with Applications to Sieve Theory",
+    "date": "2021",
+    "summary": "Prime numbers as arithmetic progressions with terms removed. A tool (cancelling sequences) that generalises the sieves of Eratosthenes and Sundaram into generating formulae with a few unknowns.",
+    "pdf": "downloads/article-cancelling-sequences.pdf",
+    "zip": "downloads/article-cancelling-sequences-latex.zip"
+  }
+]
