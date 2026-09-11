@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suryansh Singh Shekhawat</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="reading-progress" class="reading-progress" hidden><div id="reading-progress-bar"></div></div>
+
+<header class="site-header">
+  <nav class="site-nav">
+    <button class="nav-link" data-section="articles">Articles</button>
+    <button class="nav-link" data-section="projects">Projects</button>
+    <button class="nav-link" data-section="notes">Notes</button>
+    <button class="nav-link" data-section="publications">Publications</button>
+    <button class="nav-link nav-link-about" data-section="about">About</button>
+  </nav>
+</header>
+
+<main id="content">
+
+  <section id="about" class="panel">
+    <div class="about-block">
+      <img class="profile-photo" src="img/profile.jpg" alt="Suryansh Singh Shekhawat" id="profile-photo">
+      <div>
+        <h1 class="site-name">Suryansh Singh Shekhawat</h1>
+        <p class="site-tagline">I like ML and here is some of what I am upto</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="articles" class="panel">
+    <ul class="entry-list">
+      <li class="entry-placeholder">No articles published yet — check back soon.</li>
+    </ul>
+  </section>
+
+  <section id="projects" class="panel">
+    <div id="projects-list" class="notes-list"></div>
+
+    <div id="project-detail" class="notes-detail" hidden>
+      <button id="back-to-projects" class="back-link">&larr; Back to projects</button>
+      <nav id="project-nav" class="project-nav"></nav>
+      <div id="project-content" class="project-content"></div>
+      <div id="project-comments" class="comments"></div>
+    </div>
+  </section>
+
+  <section id="notes" class="panel">
+    <div id="notes-list" class="notes-list"></div>
+
+    <div id="notes-detail" class="notes-detail" hidden>
+      <button id="back-to-notes" class="back-link">&larr; Back to notes</button>
+      <h3 id="note-title" class="note-title"></h3>
+      <div id="note-downloads" class="note-downloads"></div>
+      <div id="note-pdf-viewer" class="pdf-viewer"></div>
+      <div id="note-comments" class="comments"></div>
+    </div>
+  </section>
+
+  <section id="publications" class="panel">
+    <ul class="entry-list">
+      <li class="entry-placeholder">No publications listed yet — check back soon.</li>
+    </ul>
+  </section>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

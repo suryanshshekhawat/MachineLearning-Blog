@@ -1,0 +1,141 @@
+<meta charset="utf-8" />
+<title>Federated Averaging — basics</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #ffffff; --ink: #000000; --ink-soft: #5a5a5a; --ink-faint: #bcbcbc;
+    --font-serif: "Times New Roman", Times, "Liberation Serif", Georgia, serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: var(--font-serif); }
+  body { padding: 0.9rem 1.1rem 1.1rem; }
+  h1 { font-size: 0.95rem; font-weight: normal; font-style: italic; margin: 0 0 0.15rem; }
+  .sub { font-size: 0.76rem; color: var(--ink-soft); margin: 0 0 0.8rem; }
+  #stage { width: 100%; height: auto; display: block; }
+  .client-box { fill: var(--bg); stroke: var(--ink); stroke-width: 1; cursor: pointer; }
+  .client-box.off { stroke-dasharray: 3 3; stroke: var(--ink-faint); }
+  .client-group:hover .client-box { stroke-width: 1.6; }
+  .client-label { font-family: var(--font-serif); font-style: italic; font-size: 13px; }
+  .client-sub { font-family: var(--font-mono); font-size: 9.5px; fill: var(--ink-soft); }
+  .client-val { font-family: var(--font-mono); font-size: 13px; }
+  .client-val.off { fill: var(--ink-faint); }
+  .server-box { fill: var(--bg); stroke: var(--ink); stroke-width: 1.4; }
+  .server-label { font-family: var(--font-serif); font-style: italic; font-size: 14px; }
+  .link { stroke: var(--ink); stroke-width: 1; }
+  .link.off { stroke: var(--ink-faint); stroke-dasharray: 1 4; }
+  .eq { font-family: var(--font-serif); font-style: italic; font-size: 13px; }
+  footer { display: flex; align-items: center; gap: 1rem; margin-top: 0.6rem; flex-wrap: wrap; }
+  button.ctl {
+    font-family: var(--font-serif); font-size: 0.82rem; background: none; border: none;
+    color: var(--ink); cursor: pointer; padding: 0.1rem 0; border-bottom: 1px solid transparent;
+  }
+  button.ctl:hover { border-bottom-color: var(--ink); }
+  .hint { font-size: 0.72rem; color: var(--ink-soft); font-style: italic; }
+</style>
+
+<h1>federated averaging &mdash; three clients, one aggregate</h1>
+<p class="sub">each client trains locally and reports only a number back &mdash; the server never sees the data behind it</p>
+
+<svg id="stage" viewBox="0 0 640 210">
+  <g id="links"></g>
+  <g id="clients"></g>
+  <g id="server"></g>
+  <g id="eqLayer"></g>
+</svg>
+
+<footer>
+  <button class="ctl" id="runBtn">[ run round ]</button>
+  <span class="hint">click a client box to take it offline (dropout) &mdash; watch the weights and aggregate adjust</span>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function make(tag, attrs, text) {
+    var n = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  var clients = [
+    { id: "A", n: 1000, x: 90, val: 0, online: true },
+    { id: "B", n: 2000, x: 320, val: 0, online: true },
+    { id: "C", n: 4000, x: 550, val: 0, online: true }
+  ];
+  var SERVER = { x: 320, y: 40 };
+  var BOX_TOP = 120, BOX_W = 120, BOX_H = 66;
+
+  var linksLayer = document.getElementById("links");
+  var clientsLayer = document.getElementById("clients");
+  var serverLayer = document.getElementById("server");
+  var eqLayer = document.getElementById("eqLayer");
+
+  function totalN() {
+    return clients.filter(function (c) { return c.online; }).reduce(function (s, c) { return s + c.n; }, 0);
+  }
+
+  function aggregate() {
+    var n = totalN();
+    if (n === 0) return null;
+    return clients.filter(function (c) { return c.online; })
+      .reduce(function (s, c) { return s + (c.n / n) * c.val; }, 0);
+  }
+
+  function renderServer() {
+    serverLayer.innerHTML = "";
+    var w = 130, h = 46;
+    serverLayer.appendChild(make("rect", { class: "server-box", x: SERVER.x - w / 2, y: SERVER.y - h / 2, width: w, height: h }));
+    serverLayer.appendChild(make("text", { x: SERVER.x, y: SERVER.y + 5, "text-anchor": "middle", class: "server-label" }, "server"));
+  }
+
+  function renderEq() {
+    eqLayer.innerHTML = "";
+    var agg = aggregate();
+    var text = agg === null
+      ? "no online clients — aggregate undefined"
+      : "w₁ ← " + clients.filter(function (c) { return c.online; })
+          .map(function (c) { return "(" + (c.n / totalN()).toFixed(2) + ")·" + c.val.toFixed(2); })
+          .join(" + ") + " = " + agg.toFixed(3);
+    eqLayer.appendChild(make("text", { x: 320, y: 205, "text-anchor": "middle", class: "eq" }, text));
+  }
+
+  function renderClients() {
+    clientsLayer.innerHTML = "";
+    linksLayer.innerHTML = "";
+    var n = totalN();
+    clients.forEach(function (c) {
+      linksLayer.appendChild(make("line", {
+        class: "link" + (c.online ? "" : " off"),
+        x1: SERVER.x, y1: SERVER.y + 23, x2: c.x, y2: BOX_TOP
+      }));
+
+      var g = make("g", { class: "client-group", tabindex: "0", role: "button" });
+      g.appendChild(make("rect", { class: "client-box" + (c.online ? "" : " off"), x: c.x - BOX_W / 2, y: BOX_TOP, width: BOX_W, height: BOX_H }));
+      g.appendChild(make("text", { x: c.x, y: BOX_TOP + 20, "text-anchor": "middle", class: "client-label" }, "farm " + c.id));
+      g.appendChild(make("text", { x: c.x, y: BOX_TOP + 34, "text-anchor": "middle", class: "client-sub" },
+        "n=" + c.n + (c.online ? "  weight=" + (n ? (c.n / n).toFixed(2) : "–") : "  (offline)")));
+      g.appendChild(make("text", { x: c.x, y: BOX_TOP + 54, "text-anchor": "middle", class: "client-val" + (c.online ? "" : " off") },
+        "w=" + c.val.toFixed(2)));
+      g.addEventListener("click", function () { c.online = !c.online; renderAll(); });
+      clientsLayer.appendChild(g);
+    });
+  }
+
+  function renderAll() {
+    renderClients();
+    renderServer();
+    renderEq();
+  }
+
+  document.getElementById("runBtn").addEventListener("click", function () {
+    clients.forEach(function (c) { if (c.online) c.val = Math.round((Math.random() * 2 - 1) * 100) / 100; });
+    renderAll();
+  });
+
+  clients.forEach(function (c) { c.val = Math.round((Math.random() * 2 - 1) * 100) / 100; });
+  renderAll();
+})();
+</script>

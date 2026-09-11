@@ -1,0 +1,1005 @@
+<meta charset="utf-8" />
+<title>Secure Aggregation Sandbox</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #000000;
+    --ink-soft: #5a5a5a;
+    --ink-faint: #bcbcbc;
+    --grid: #e4e4e4;
+    --font-serif: "Times New Roman", Times, "Liberation Serif", Georgia, serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+
+  html, body {
+    height: 100%;
+    font-family: var(--font-serif);
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  @media (max-width: 860px) {
+    body { height: auto; overflow: auto; }
+  }
+
+  em.v { font-style: italic; }
+
+  /* ---------- header ---------- */
+  header {
+    flex: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.5rem 1rem 0.4rem;
+    border-bottom: 1px solid var(--ink);
+    font-size: 0.82rem;
+  }
+  header .title { font-style: italic; }
+  header .meta { color: var(--ink-soft); font-size: 0.76rem; }
+  header .meta button {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 0.76rem;
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    border-bottom: 1px dotted var(--ink-soft);
+    cursor: pointer;
+    padding: 0;
+    margin-left: 0.35rem;
+  }
+  header .meta button:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+  /* ---------- stage ---------- */
+  main.stage {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  @media (max-width: 860px) { main.stage { min-height: 60vh; } }
+
+  #diagram { width: 100%; height: 100%; display: block; }
+
+  .node-label { font-family: var(--font-serif); font-style: italic; }
+  .readout { font-family: var(--font-serif); }
+  .mono-sm { font-family: var(--font-mono); font-size: 10px; }
+
+  .link { stroke: var(--ink); stroke-width: 1; fill: none; }
+  .link.dropped { stroke: var(--ink-faint); stroke-dasharray: 1 4; }
+
+  .farmbox { fill: var(--bg); stroke: var(--ink); stroke-width: 1; }
+  .farmbox.dropped { stroke-dasharray: 3 3; }
+  .farmbox.synthetic { stroke: var(--ink-soft); }
+  .farm-hit { fill: transparent; pointer-events: all; cursor: pointer; }
+  .farm-group:hover .farmbox { stroke-width: 1.6; }
+  .farm-group:focus-visible { outline: none; }
+  .farm-group:focus-visible .farmbox { stroke-width: 1.8; }
+
+  .turbine-dot { fill: var(--ink); stroke: none; cursor: pointer; }
+  .turbine-dot.down { fill: var(--bg); stroke: var(--ink-faint); stroke-width: 1; }
+  .turbine-dot.synthetic { fill: var(--ink-soft); }
+  .turbine-dot.synthetic.down { stroke: var(--ink-faint); }
+  .turbine-dot.farm-dropped { fill: var(--ink-faint); }
+  .turbine-dot:hover { stroke: var(--ink); stroke-width: 1.4; }
+
+  .serverbox { fill: var(--bg); stroke: var(--ink); stroke-width: 1.4; }
+  .sigma { font-family: var(--font-serif); font-style: italic; font-size: 22px; }
+
+  .flow-dot { fill: var(--ink); stroke: var(--ink); stroke-width: 1; }
+  .flow-dot.masked { fill: url(#hatch); }
+  .flow-circle { fill: var(--ink); }
+  .flow-circle.masked { fill: none; stroke: var(--ink); stroke-width: 1; }
+
+  .caret { fill: var(--bg); stroke: var(--ink-soft); stroke-width: 1; cursor: pointer; }
+  .caret:hover { fill: var(--grid); }
+  .caret-glyph { stroke: var(--ink-soft); stroke-width: 1; }
+
+  .addbtn, .rmbtn {
+    fill: var(--bg); stroke: var(--ink); stroke-width: 1; cursor: pointer;
+  }
+  .addbtn:hover, .rmbtn:hover { fill: var(--grid); }
+  .addbtn.disabled, .rmbtn.disabled { stroke: var(--ink-faint); cursor: default; pointer-events: none; }
+  .addbtn.disabled text, .rmbtn.disabled text { fill: var(--ink-faint); }
+  .glyph { stroke: var(--ink); stroke-width: 1.2; }
+
+  /* ---------- floating overlays ---------- */
+  .float { position: absolute; font-size: 0.72rem; line-height: 1.5; }
+  .float.right-col { top: 0.6rem; right: 0.8rem; text-align: right; color: var(--ink-soft); display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; max-width: 30ch; }
+  .legend .sample { display: inline-block; width: 16px; border-top: 1px solid var(--ink); margin-right: 0.35rem; vertical-align: middle; }
+  .legend .sample.dropped { border-top: 1px dashed var(--ink-faint); }
+  .legend .sample.mask { width: 10px; height: 10px; border: 1px solid var(--ink); background: repeating-linear-gradient(45deg, var(--ink) 0 1.5px, transparent 1.5px 4px); vertical-align: -1px; }
+  .float.note { font-style: italic; }
+
+  .float.spark { bottom: 0.7rem; left: 0.8rem; width: 230px; }
+  .spark-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.15rem; }
+  .spark-head .cap { color: var(--ink-soft); font-size: 0.68rem; }
+  .spark-head button.ctl { font-size: 0.68rem; }
+  #sparkline { width: 230px; height: 92px; display: block; }
+  .spark-axis { stroke: var(--ink-faint); stroke-width: 1; }
+  .spark-line { fill: none; stroke: var(--ink); stroke-width: 1.3; }
+  .spark-line.measured { stroke: var(--ink-soft); stroke-dasharray: 3 2; stroke-width: 1.1; }
+  .spark-dot { fill: var(--ink); }
+  .spark-txt { font-family: var(--font-mono); font-size: 8.5px; fill: var(--ink-soft); }
+  .spark-legend { font-size: 0.66rem; color: var(--ink-soft); margin-top: 0.2rem; display: flex; gap: 0.8rem; }
+  .spark-legend .ln { display: inline-block; width: 12px; border-top: 1.3px solid var(--ink); margin-right: 0.25rem; vertical-align: middle; }
+  .spark-legend .ln.measured { border-top-style: dashed; border-top-color: var(--ink-soft); }
+
+  /* ---------- channel panel ---------- */
+  #channelPanel {
+    position: absolute; display: none; background: var(--bg); border: 1px solid var(--ink);
+    padding: 0.4rem 0.55rem; font-family: var(--font-mono); font-size: 10px; line-height: 1.55;
+    white-space: nowrap; z-index: 5;
+  }
+  #channelPanel.open { display: block; }
+  #channelPanel .ch-title { font-family: var(--font-serif); font-style: italic; font-size: 11px; margin-bottom: 0.15rem; }
+
+  /* ---------- controls (footer) ---------- */
+  footer.controls {
+    flex: none;
+    border-top: 1px solid var(--ink);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem 1.4rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.82rem;
+  }
+  .ctl-group { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
+  .ctl {
+    font-family: var(--font-serif);
+    font-size: 0.82rem;
+    background: none;
+    border: none;
+    color: var(--ink);
+    cursor: pointer;
+    padding: 0.1rem 0;
+    border-bottom: 1px solid transparent;
+  }
+  .ctl:hover, .ctl:focus-visible { border-bottom-color: var(--ink); }
+  .ctl .bracket { color: var(--ink-soft); }
+  .ctl:disabled { color: var(--ink-faint); cursor: default; }
+  .ctl:disabled .bracket { color: var(--ink-faint); }
+
+  .valctl { display: inline-flex; align-items: center; gap: 0.3rem; }
+  .valctl button {
+    font-family: var(--font-mono); font-size: 0.72rem; width: 16px; height: 16px; line-height: 1;
+    border: 1px solid var(--ink); background: var(--bg); cursor: pointer; padding: 0;
+  }
+  .valctl .n { font-family: var(--font-mono); min-width: 1.6ch; text-align: center; font-variant-numeric: tabular-nums; }
+
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 90px; height: 1px; background: var(--ink);
+    border: none; margin: 0;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 9px; height: 9px; background: var(--ink); cursor: pointer; border-radius: 0;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 9px; height: 9px; background: var(--ink); border: none; cursor: pointer; border-radius: 0;
+  }
+  input[type="range"]::-moz-range-track { background: var(--ink); height: 1px; }
+
+  .speed-ctl { display: flex; flex-direction: column; gap: 0.15rem; }
+  .speed-live { text-align: center; color: var(--ink); font-size: 0.68rem; font-variant-numeric: tabular-nums; }
+  .speed-row { display: flex; align-items: center; gap: 0.4rem; }
+  .edge-label { font-family: var(--font-mono); font-size: 0.6rem; color: var(--ink-faint); }
+
+  /* ---------- terminal ---------- */
+  .terminal {
+    flex: none;
+    border-top: 1px solid var(--ink);
+    padding: 0.35rem 1rem 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    height: 128px;
+    overflow-y: auto;
+  }
+  .terminal .line { white-space: pre-wrap; }
+  .terminal .line:last-child { color: var(--ink); }
+  .terminal .line.abort { color: var(--ink); font-weight: bold; }
+  .terminal .line.divider { color: var(--ink-faint); }
+  .cursor { display: inline-block; color: var(--ink); animation: blink 1s steps(1) infinite; }
+  @media (prefers-reduced-motion: reduce) { .cursor { animation: none; } }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  button, input, [tabindex] { outline: none; }
+  button:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+    outline: 1.5px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: 0.001ms !important; }
+  }
+</style>
+
+<header>
+  <div class="title">secagg &mdash; federated aggregation sandbox</div>
+  <div class="meta">CARE dataset: 3 farms, 36 turbines, <em class="v">K</em>=3 by construction
+    <button id="explainBtn" type="button">why only 3?</button>
+  </div>
+</header>
+
+<main class="stage">
+  <svg id="diagram" viewBox="0 0 1000 480" preserveAspectRatio="xMidYMid meet" role="img"
+       aria-label="Diagram of a secure aggregator connected to a variable number of wind-farm clients, showing which are online, dropped, or synthetic, with controls to add or remove clients.">
+    <defs>
+      <pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+        <rect width="5" height="5" fill="var(--bg)"></rect>
+        <line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="1.4"></line>
+      </pattern>
+      <marker id="arrow" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L8,4 L0,8 z" fill="var(--ink)"></path>
+      </marker>
+    </defs>
+    <g id="readout"></g>
+    <g id="linkLayer"></g>
+    <g id="packetLayer"></g>
+    <g id="farmLayer"></g>
+    <g id="serverLayer"></g>
+    <g id="spawnLayer"></g>
+  </svg>
+
+  <div class="float right-col">
+    <div class="legend">
+      <div><span class="sample"></span>online client</div>
+      <div><span class="sample dropped"></span>dropped client</div>
+      <div><span class="sample mask"></span>masked update on wire</div>
+    </div>
+    <div class="note" id="explainNote" hidden>
+      <em class="v">K</em> is fixed at 3 because Gück et al.'s CARE benchmark
+      contains exactly three wind farms. Partitioning by turbine instead of
+      by farm gives <em class="v">K</em>&le;36 real clients &mdash; or use
+      the <span class="mono-sm">+client</span> control on the diagram to add
+      synthetic ones and explore larger <em class="v">K</em> directly.
+    </div>
+  </div>
+
+  <div class="float spark">
+    <div class="spark-head">
+      <span class="cap">RMSE by round</span>
+      <button class="ctl" id="measuredToggle" type="button"><span class="bracket">[</span>show measured<span class="bracket">]</span></button>
+    </div>
+    <svg id="sparkline" viewBox="0 0 230 92"></svg>
+    <div class="spark-legend" id="sparkLegend" hidden>
+      <span><i class="ln"></i>live (this session)</span>
+      <span><i class="ln measured"></i><span id="measuredLabel">measured</span></span>
+    </div>
+    <div class="spark-legend" id="sparkHint">live is a live-updating formula, calibrated to &mdash; not computed from &mdash; an actual training run.</div>
+  </div>
+
+  <div id="channelPanel"></div>
+</main>
+
+<footer class="controls">
+  <div class="ctl-group">
+    <button class="ctl" id="stepBtn" type="button"><span class="bracket">[</span>step<span class="bracket">]</span></button>
+    <button class="ctl" id="playBtn" type="button"><span class="bracket">[</span>play<span class="bracket">]</span></button>
+    <button class="ctl" id="resetBtn" type="button"><span class="bracket">[</span>reset<span class="bracket">]</span></button>
+    <div class="speed-ctl">
+      <div class="speed-live mono-sm" id="speedLiveVal">rt 1.00x</div>
+      <div class="speed-row">
+        <span class="edge-label">0.25x</span>
+        <input type="range" id="speedSlider" min="0.25" max="3" step="0.05" value="1" aria-label="Playback speed, slower at 0.25x, faster at 3x">
+        <span class="edge-label">3x</span>
+      </div>
+    </div>
+  </div>
+  <div class="ctl-group">
+    <button class="ctl" id="secAggToggle" type="button">masking: <span class="bracket">[</span><span id="secAggVal">on</span><span class="bracket">]</span></button>
+    <span class="valctl"><em class="v mono-sm" style="font-family:var(--font-serif)">&tau;</em>=<span class="n" id="thVal">2</span>
+      <button id="thMinus" type="button" aria-label="decrease threshold">&minus;</button>
+      <button id="thPlus" type="button" aria-label="increase threshold">+</button>
+    </span>
+    <label class="valctl"><em class="v" style="font-family:var(--font-serif)">&sigma;</em>=<span class="n mono-sm" id="sigmaVal">0.00</span>
+      <input type="range" id="sigmaSlider" min="0" max="2.5" step="0.05" value="0">
+    </label>
+    <button class="ctl" id="churnToggle" type="button" title="At most one turbine changes per round when on -- never more.">fleet drift: <span class="bracket">[</span><span id="churnVal">off</span><span class="bracket">]</span></button>
+  </div>
+</footer>
+<div class="terminal" id="terminal" aria-live="polite" aria-label="Event log"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var REAL_FARMS = [
+    { id: "A", turbines: 5 },
+    { id: "B", turbines: 9 },
+    { id: "C", turbines: 22 }
+  ];
+  var MAX_FARMS = 8;
+  var LETTERS = "ABCDEFGH";
+
+  var DP_ANCHORS = [ [0, 0.089], [0.1, 0.096], [0.5, 0.166], [2.0, 2.05] ];
+
+  // Real numbers from an actual training run: three real CARE wind-farm
+  // CSVs, a small MLP, 25 FedAvg rounds x 3 local epochs each. Produced by
+  // ../fl_secagg_simulation/run_simulation.py -> results/round_series.json.
+  // Not recomputed here -- this is a recording, played back on demand.
+  var REAL_RUN = {
+    fedavg: [0.1487, 0.1331, 0.1238, 0.115, 0.1079, 0.1004, 0.0963, 0.0935, 0.0915, 0.0908, 0.0931, 0.0958, 0.0932, 0.0883, 0.0868, 0.0865, 0.0863, 0.0875, 0.0876, 0.0878, 0.0884, 0.0887, 0.0892, 0.0889, 0.0894],
+    fedavg_secagg: [0.1487, 0.1331, 0.1238, 0.115, 0.1079, 0.1004, 0.0963, 0.0935, 0.0915, 0.0908, 0.0931, 0.0958, 0.0932, 0.0883, 0.0868, 0.0865, 0.0863, 0.0875, 0.0876, 0.0878, 0.0884, 0.0887, 0.0892, 0.0889, 0.0894],
+    "dp_0.1": [0.4633, 0.3093, 0.1886, 0.1445, 0.1356, 0.1137, 0.1039, 0.1196, 0.1007, 0.0952, 0.0902, 0.1199, 0.0986, 0.0866, 0.0853, 0.0902, 0.0924, 0.0879, 0.0972, 0.093, 0.0864, 0.0896, 0.1061, 0.1018, 0.0961],
+    "dp_0.5": [0.4532, 0.267, 0.1821, 0.2082, 0.2091, 0.1453, 0.1579, 0.2416, 0.1445, 0.1329, 0.1812, 0.4427, 0.3533, 0.1082, 0.1841, 0.1144, 0.1697, 0.127, 0.1132, 0.1196, 0.1103, 0.1074, 0.1573, 0.2669, 0.1664],
+    "dp_2.0": [0.7266, 0.4627, 0.8024, 0.5028, 1.0747, 1.0895, 0.8086, 2.8338, 0.8619, 0.8312, 1.2186, 2.6997, 3.1849, 1.7296, 3.5531, 1.8943, 1.5875, 1.7878, 1.6856, 1.136, 1.8346, 1.4249, 2.3456, 3.1786, 2.0503]
+  };
+  // Real per-farm characteristics measured directly from the CARE sample
+  // each client trains on (see ../fl_secagg_simulation/data_loader.py).
+  // Not shown for synthetic clients -- there's no real telemetry behind them.
+  var REAL_FARM_STATS = {
+    A: { n_train: 4000, n_test: 1004, wind: 6.81, temp: 20.0, pitch: 5.3, rotor: 10.7, power_mean: 0.345, power_std: 0.357 },
+    B: { n_train: 4000, n_test: 1200, wind: 8.66, temp: 12.4, pitch: 10.2, rotor: 7.47, power_mean: 0.376, power_std: 0.319 },
+    C: { n_train: 4000, n_test: 668, wind: 7.57, temp: 29.0, pitch: 10.0, rotor: 9.07, power_mean: 0.289, power_std: 0.259 }
+  };
+
+  function allUp(n) { var a = new Array(n); for (var i = 0; i < n; i++) { a[i] = true; } return a; }
+
+  var state = {
+    farms: REAL_FARMS.map(function (f) { return { id: f.id, turbines: f.turbines, online: true, synthetic: false, turbineUp: allUp(f.turbines) }; }),
+    round: 0,
+    successfulRounds: 0,
+    phase: "idle",
+    playing: false,
+    speed: 500,
+    secAgg: true,
+    threshold: 2,
+    sigma: 0,
+    stepping: false,
+    showMeasured: false,
+    openChannel: null,
+    churn: false
+  };
+
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, reduceMotion ? 0 : ms); }); }
+
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function make(tag, attrs, text) {
+    var n = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) { n.setAttribute(k, attrs[k]); }
+    if (text != null) { n.textContent = text; }
+    return n;
+  }
+
+  var svg = document.getElementById("diagram");
+  var readoutLayer = document.getElementById("readout");
+  var linkLayer = document.getElementById("linkLayer");
+  var packetLayer = document.getElementById("packetLayer");
+  var farmLayer = document.getElementById("farmLayer");
+  var serverLayer = document.getElementById("serverLayer");
+  var spawnLayer = document.getElementById("spawnLayer");
+  var terminal = document.getElementById("terminal");
+  var LOG_CAP = 150;
+  var logCount = 0;
+
+  var SERVER = { x: 500, y: 90 };
+  var FARM_TOP = 245;
+  var FARM_BOX_H = 88; // fixed for every client, real or synthetic -- boxes never resize
+  var FARM_MID = FARM_TOP + FARM_BOX_H / 2;
+  var FARM_AREA = { x0: 60, x1: 860 };
+  var SPAWN_X = 930;
+
+  function turbineGrid(n) {
+    var cols = Math.min(10, Math.max(3, Math.round(Math.sqrt(n) * 1.6)));
+    var rows = Math.ceil(n / cols);
+    return { cols: cols, rows: rows };
+  }
+
+  function dpFloor(sigma) {
+    for (var i = 0; i < DP_ANCHORS.length - 1; i++) {
+      var a = DP_ANCHORS[i], b = DP_ANCHORS[i + 1];
+      if (sigma <= b[0]) {
+        var t = (sigma - a[0]) / (b[0] - a[0]);
+        return a[1] + t * (b[1] - a[1]);
+      }
+    }
+    var last = DP_ANCHORS[DP_ANCHORS.length - 1], prev = DP_ANCHORS[DP_ANCHORS.length - 2];
+    var slope = (last[1] - prev[1]) / (last[0] - prev[0]);
+    return last[1] + slope * (sigma - last[0]);
+  }
+
+  // Effective share of the fleet actually contributing this round: online
+  // farms count only their up turbines, dropped farms count zero. This is
+  // the illustrative stand-in for FedAvg's n_k/n weighting (Eq. 1) and the
+  // data-volume asymmetry it interacts with (Section 4.4, Eq. 9) -- a farm
+  // running half its turbines contributes roughly half as much real data,
+  // whether or not it has formally dropped out of the round.
+  function effectiveShare(online) {
+    var totalTurbines = state.farms.reduce(function (s, f) { return s + f.turbines; }, 0);
+    var upTurbines = online.reduce(function (s, f) { return s + f.turbineUp.filter(Boolean).length; }, 0);
+    return totalTurbines > 0 ? upTurbines / totalTurbines : 1;
+  }
+
+  function computeRmse(online) {
+    var floor = dpFloor(state.sigma);
+    var start = 0.48;
+    var decay = Math.exp(-0.16 * state.successfulRounds);
+    var base = floor + (start - floor) * decay;
+    var missingShare = 1 - effectiveShare(online);
+    var penalty = 1 + 1.2 * missingShare;
+    return base * penalty;
+  }
+
+  function onlineFarms() { return state.farms.filter(function (f) { return f.online; }); }
+
+  function farmX(i, n) {
+    if (n <= 1) { return (FARM_AREA.x0 + FARM_AREA.x1) / 2; }
+    return FARM_AREA.x0 + i * (FARM_AREA.x1 - FARM_AREA.x0) / (n - 1);
+  }
+
+  // ---------- rendering ----------
+  function renderReadout() {
+    readoutLayer.innerHTML = "";
+    var y = 26;
+    var items = [
+      "t=" + state.round,
+      "φ: " + phaseWord(state.phase),
+      "Σ=" + (state.phase === "aborted" ? "∅" : (state.history_last_ok === false ? "∅" : (state.lastOk === undefined ? "–" : (state.lastOk ? "OK" : "∅"))))
+    ];
+    var xs = [180, 500, 800];
+    var anchors = ["start", "middle", "end"];
+    items.forEach(function (t, i) {
+      readoutLayer.appendChild(make("text", {
+        x: xs[i], y: y, "text-anchor": anchors[i], class: "readout", "font-size": "13"
+      }, t));
+    });
+  }
+
+  function phaseWord(p) {
+    if (p === "idle") { return state.round === 0 ? "ready" : "idle"; }
+    if (p === "train") { return "broadcast + local training"; }
+    if (p === "mask") { return "key exchange + masked submission"; }
+    if (p === "result") { return "aggregating"; }
+    if (p === "aborted") { return "aborted"; }
+    return p;
+  }
+
+  function renderServer() {
+    serverLayer.innerHTML = "";
+    var w = 150, h = 50;
+    serverLayer.appendChild(make("rect", {
+      class: "serverbox", x: SERVER.x - w / 2, y: SERVER.y - h / 2, width: w, height: h
+    }));
+    serverLayer.appendChild(make("text", {
+      x: SERVER.x, y: SERVER.y + 7, "text-anchor": "middle", class: "sigma"
+    }, "Σ"));
+  }
+
+  // Small, slow, continuous dots riding the arrow itself -- not tied to a
+  // round's phases, just a quiet sign the channel is live. Hollow when
+  // masking is on (an update travelling that no one can read in transit),
+  // solid when it's off (the server would see this one in the clear).
+  var FLOW_BOX = 22; // matches the legend's "masked update on wire" sample, just bigger
+  var FLOW_DOT_R = 1.6;
+  var DOT_DUR = 7.2; // slow, continuous loop; the box stays put
+
+  function renderFlowDots(cx, top) {
+    var x1 = SERVER.x, y1 = SERVER.y + 25, x2 = cx, y2 = top;
+    var masked = state.secAgg;
+    var boxCls = "flow-dot" + (masked ? " masked" : "");
+    var dotCls = "flow-circle" + (masked ? " masked" : "");
+    var half = FLOW_BOX / 2;
+    var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+
+    // The box is a fixed marker sitting on the wire, not a travelling
+    // packet: it just reports the current masking state at a glance.
+    packetLayer.appendChild(make("rect", { class: boxCls, x: mx - half, y: my - half, width: FLOW_BOX, height: FLOW_BOX }));
+
+    if (reduceMotion) {
+      packetLayer.appendChild(make("circle", { class: dotCls, cx: mx, cy: my, r: FLOW_DOT_R }));
+      return;
+    }
+    var pathStr = "M" + x1 + "," + y1 + " L" + x2 + "," + y2;
+    [0, 1].forEach(function (k) {
+      var dot = make("circle", { class: dotCls, cx: 0, cy: 0, r: FLOW_DOT_R });
+      dot.appendChild(make("animateMotion", { dur: DOT_DUR + "s", repeatCount: "indefinite", begin: (k * -DOT_DUR / 2) + "s", path: pathStr }));
+      packetLayer.appendChild(dot);
+    });
+  }
+
+  function renderFarmsAndLinks() {
+    linkLayer.innerHTML = "";
+    farmLayer.innerHTML = "";
+    packetLayer.innerHTML = "";
+    var n = state.farms.length;
+
+    state.farms.forEach(function (farm, i) {
+      var cx = farmX(i, n);
+      var boxW = Math.max(78, Math.min(150, (FARM_AREA.x1 - FARM_AREA.x0) / Math.max(n - 1, 1) * 0.82));
+      var boxH = FARM_BOX_H;
+      var top = FARM_TOP;
+
+      var link = make("line", {
+        class: "link" + (farm.online ? "" : " dropped"),
+        x1: SERVER.x, y1: SERVER.y + 25, x2: cx, y2: top,
+        "marker-end": "url(#arrow)"
+      });
+      linkLayer.appendChild(link);
+
+      if (farm.online) {
+        renderFlowDots(cx, top);
+      }
+
+      var g = make("g", {
+        class: "farm-group", tabindex: "0", role: "button",
+        "aria-label": "Farm " + farm.id + ", " + farm.turbines + " turbines" + (farm.synthetic ? " (synthetic)" : "") +
+          ", currently " + (farm.online ? "online. Activate to drop it." : "dropped. Activate to reconnect it.")
+      });
+      g.appendChild(make("rect", {
+        class: "farmbox" + (farm.online ? "" : " dropped") + (farm.synthetic ? " synthetic" : ""),
+        x: cx - boxW / 2, y: top, width: boxW, height: boxH
+      }));
+      // Placed early in document order (below the dots that follow) so the
+      // whole-box click-to-drop target never shadows the per-turbine dots.
+      g.appendChild(make("rect", {
+        class: "farm-hit", x: cx - boxW / 2, y: top, width: boxW, height: boxH
+      }));
+      g.appendChild(make("text", {
+        x: cx, y: top + 20, "text-anchor": "middle", class: "node-label", "font-size": "16"
+      }, farm.id));
+      var upCount = farm.turbineUp.filter(Boolean).length;
+      var nText = make("text", {
+        x: cx, y: top + 34, "text-anchor": "middle", class: "mono-sm", style: "cursor:" + (farm.synthetic ? "pointer" : "default")
+      }, upCount === farm.turbines ? ("n=" + farm.turbines) : (upCount + "/" + farm.turbines + " up"));
+      if (farm.synthetic) {
+        nText.addEventListener("click", function (e) { e.stopPropagation(); rerollFarm(farm.id); });
+      }
+      g.appendChild(nText);
+
+      // One dot per turbine -- click any dot to take it down for
+      // maintenance (or bring it back up). Down turbines reduce this
+      // farm's effective weight in the aggregate (Section 4.4's data
+      // volume asymmetry, Eq. 9), not just its displayed count. The box
+      // itself never resizes: denser fleets just get smaller, tighter
+      // dots within the same fixed footprint.
+      var grid = turbineGrid(farm.turbines);
+      var dotAreaTop = top + 38, dotAreaH = boxH - 38 - 8, dotAreaW = boxW - 16;
+      var colGap = dotAreaW / grid.cols;
+      var rowGap = grid.rows > 1 ? dotAreaH / grid.rows : dotAreaH;
+      var dotR = Math.max(0.9, Math.min(2.4, Math.min(colGap, rowGap) / 2 - 0.5));
+      var dotStartX = cx - dotAreaW / 2 + colGap / 2;
+      var dotStartY = grid.rows > 1 ? dotAreaTop + rowGap / 2 : dotAreaTop + dotAreaH / 2;
+      for (var ti = 0; ti < farm.turbines; ti++) {
+        var col = ti % grid.cols, row = Math.floor(ti / grid.cols);
+        var dx = dotStartX + col * colGap;
+        var dy = dotStartY + row * rowGap;
+        var up = farm.turbineUp[ti];
+        var dotCls = "turbine-dot" + (up ? "" : " down") + (farm.synthetic ? " synthetic" : "") + (!farm.online ? " farm-dropped" : "");
+        var dot = make("circle", { class: dotCls, cx: dx.toFixed(1), cy: dy.toFixed(1), r: dotR.toFixed(2) });
+        var title = make("title", {}, "farm " + farm.id + ", turbine " + (ti + 1) + " of " + farm.turbines + " — " + (up ? "up" : "down (click to restore)"));
+        dot.appendChild(title);
+        (function (fid, idx) {
+          dot.addEventListener("click", function (e) { e.stopPropagation(); toggleTurbine(fid, idx); });
+        })(farm.id, ti);
+        g.appendChild(dot);
+      }
+
+      g.addEventListener("click", function () { toggleFarm(farm.id); });
+      g.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleFarm(farm.id); }
+      });
+      farmLayer.appendChild(g);
+
+      // channel caret: opens a small panel of this client's real data
+      // characteristics (or says so when there is none, for synthetic
+      // clients) -- a second, deliberately separate "channel" from the
+      // online/offline toggle above it.
+      var caret = make("g", {
+        class: "caret", tabindex: "0", role: "button",
+        "aria-label": "Open data channel for farm " + farm.id
+      });
+      caret.appendChild(make("rect", { x: cx - 9, y: top + boxH + 4, width: 18, height: 12 }));
+      caret.appendChild(make("path", { class: "caret-glyph", d: "M" + (cx - 4) + "," + (top + boxH + 8) + " L" + cx + "," + (top + boxH + 12) + " L" + (cx + 4) + "," + (top + boxH + 8), fill: "none" }));
+      caret.addEventListener("click", function (e) { e.stopPropagation(); openChannel(farm.id, caret); });
+      caret.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); openChannel(farm.id, caret); }
+      });
+      farmLayer.appendChild(caret);
+    });
+
+    renderSpawnControls(n);
+    refreshOpenChannel();
+  }
+
+  function renderSpawnControls(n) {
+    spawnLayer.innerHTML = "";
+    var canAdd = n < MAX_FARMS;
+    var canRemove = state.farms.some(function (f) { return f.synthetic; });
+
+    var addG = make("g", { class: "addbtn" + (canAdd ? "" : " disabled"), tabindex: canAdd ? "0" : "-1", role: "button", "aria-label": "Add a synthetic client" });
+    addG.appendChild(make("rect", { x: SPAWN_X - 14, y: FARM_MID - 34, width: 28, height: 28 }));
+    addG.appendChild(make("line", { class: "glyph", x1: SPAWN_X, y1: FARM_MID - 27, x2: SPAWN_X, y2: FARM_MID - 13 }));
+    addG.appendChild(make("line", { class: "glyph", x1: SPAWN_X - 7, y1: FARM_MID - 20, x2: SPAWN_X + 7, y2: FARM_MID - 20 }));
+    if (canAdd) { addG.addEventListener("click", addFarm); addG.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { addFarm(); } }); }
+    spawnLayer.appendChild(addG);
+    spawnLayer.appendChild(make("text", { x: SPAWN_X, y: FARM_MID + 10, "text-anchor": "middle", class: "mono-sm" }, "+client"));
+
+    var rmG = make("g", { class: "rmbtn" + (canRemove ? "" : " disabled"), tabindex: canRemove ? "0" : "-1", role: "button", "aria-label": "Remove last synthetic client" });
+    rmG.appendChild(make("rect", { x: SPAWN_X - 14, y: FARM_MID + 22, width: 28, height: 28 }));
+    rmG.appendChild(make("line", { class: "glyph", x1: SPAWN_X - 7, y1: FARM_MID + 36, x2: SPAWN_X + 7, y2: FARM_MID + 36 }));
+    if (canRemove) { rmG.addEventListener("click", removeFarm); rmG.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { removeFarm(); } }); }
+    spawnLayer.appendChild(rmG);
+    spawnLayer.appendChild(make("text", { x: SPAWN_X, y: FARM_MID + 66, "text-anchor": "middle", class: "mono-sm" }, "-client"));
+  }
+
+  function renderAll() {
+    renderReadout();
+    renderServer();
+    renderFarmsAndLinks();
+  }
+
+  // ---------- state mutations ----------
+  function toggleFarm(id) {
+    var f = state.farms.filter(function (x) { return x.id === id; })[0];
+    if (!f) { return; }
+    f.online = !f.online;
+    appendLog((f.online ? "client " + id + " rejoined" : "client " + id + " dropped") + " — t=" + state.round);
+    renderAll();
+  }
+
+  function toggleTurbine(farmId, idx) {
+    var f = state.farms.filter(function (x) { return x.id === farmId; })[0];
+    if (!f) { return; }
+    f.turbineUp[idx] = !f.turbineUp[idx];
+    appendLog("farm " + farmId + " turbine " + (idx + 1) + "/" + f.turbines +
+      (f.turbineUp[idx] ? " restored" : " taken down for maintenance"));
+    renderAll();
+  }
+
+  function addFarm() {
+    if (state.farms.length >= MAX_FARMS) { return; }
+    var id = LETTERS[state.farms.length];
+    var turbines = 3 + Math.floor(Math.random() * 27);
+    state.farms.push({ id: id, turbines: turbines, online: true, synthetic: true, turbineUp: allUp(turbines) });
+    appendLog("synthetic client " + id + " added (n=" + turbines + ") — K=" + state.farms.length);
+    renderAll();
+    renderSparkline();
+  }
+
+  function removeFarm() {
+    for (var i = state.farms.length - 1; i >= 0; i--) {
+      if (state.farms[i].synthetic) {
+        var removed = state.farms.splice(i, 1)[0];
+        state.threshold = Math.min(state.threshold, state.farms.length);
+        appendLog("synthetic client " + removed.id + " removed — K=" + state.farms.length);
+        renderAll();
+        renderThresholdVal();
+        return;
+      }
+    }
+  }
+
+  function rerollFarm(id) {
+    var f = state.farms.filter(function (x) { return x.id === id; })[0];
+    if (!f || !f.synthetic) { return; }
+    f.turbines = 3 + Math.floor(Math.random() * 27);
+    f.turbineUp = allUp(f.turbines);
+    renderAll();
+  }
+
+  function appendLog(text, kind) {
+    var cursor = terminal.querySelector(".cursor");
+    if (cursor) { cursor.parentNode.remove(); }
+    var line = document.createElement("div");
+    line.className = "line" + (kind ? " " + kind : "");
+    line.textContent = "› " + text;
+    terminal.appendChild(line);
+    logCount++;
+    while (logCount > LOG_CAP && terminal.firstChild && terminal.firstChild !== terminal.lastChild) {
+      terminal.removeChild(terminal.firstChild);
+      logCount--;
+    }
+    var cursorLine = document.createElement("div");
+    cursorLine.className = "line";
+    cursorLine.innerHTML = '<span class="cursor">› _</span>';
+    terminal.appendChild(cursorLine);
+    terminal.scrollTop = terminal.scrollHeight;
+  }
+
+  // ---------- channel panel ----------
+  var channelPanel = document.getElementById("channelPanel");
+  var stageEl = document.querySelector("main.stage");
+
+  function channelHtml(farm) {
+    var stats = REAL_FARM_STATS[farm.id];
+    var upCount = farm.turbineUp.filter(Boolean).length;
+    var fleetLine = 'fleet: ' + upCount + '/' + farm.turbines + ' up' +
+      (upCount < farm.turbines ? ' &mdash; reduces this client’s weight' : '');
+    if (!stats) {
+      return '<div class="ch-title">client ' + farm.id + ' &mdash; synthetic</div>' +
+        'no real telemetry behind this client;<br>its n=' + farm.turbines + ' is a placeholder.<br>' + fleetLine;
+    }
+    return '<div class="ch-title">client ' + farm.id + ' &mdash; real CARE sample</div>' +
+      'n_train=' + stats.n_train + ' &middot; n_test=' + stats.n_test + '<br>' +
+      'wind̄=' + stats.wind.toFixed(2) + ' m/s &middot; temp̄=' + stats.temp.toFixed(1) + '°C<br>' +
+      'pitch̄=' + stats.pitch.toFixed(1) + '° &middot; rotor̄=' + stats.rotor.toFixed(1) + ' rpm<br>' +
+      'power̄=' + stats.power_mean.toFixed(3) + ' (σ=' + stats.power_std.toFixed(3) + ')<br>' + fleetLine;
+  }
+
+  function positionChannel(farm, caretEl) {
+    channelPanel.innerHTML = channelHtml(farm);
+    var caretRect = caretEl.getBoundingClientRect();
+    var stageRect = stageEl.getBoundingClientRect();
+    channelPanel.style.left = Math.max(4, caretRect.left - stageRect.left - 40) + "px";
+    channelPanel.style.top = (caretRect.bottom - stageRect.top + 4) + "px";
+    channelPanel.classList.add("open");
+  }
+
+  function openChannel(id, caretEl) {
+    if (state.openChannel === id) { closeChannel(); return; }
+    var farm = state.farms.filter(function (f) { return f.id === id; })[0];
+    if (!farm) { return; }
+    state.openChannel = id;
+    positionChannel(farm, caretEl);
+  }
+
+  function closeChannel() {
+    state.openChannel = null;
+    channelPanel.classList.remove("open");
+  }
+
+  // Called after every re-render (including automatic turbine churn) so an
+  // open channel keeps showing live numbers and stays anchored to the
+  // rebuilt caret, instead of just vanishing under the user.
+  function refreshOpenChannel() {
+    if (!state.openChannel) { return; }
+    var farm = state.farms.filter(function (f) { return f.id === state.openChannel; })[0];
+    if (!farm) { closeChannel(); return; }
+    var caret = Array.prototype.find.call(farmLayer.querySelectorAll(".caret"), function (c) {
+      return c.getAttribute("aria-label") === "Open data channel for farm " + farm.id;
+    });
+    if (!caret) { closeChannel(); return; }
+    positionChannel(farm, caret);
+  }
+
+  document.querySelector("main.stage").addEventListener("click", function (e) {
+    if (state.openChannel && !channelPanel.contains(e.target) && !e.target.closest(".caret")) { closeChannel(); }
+  });
+
+  function renderThresholdVal() {
+    document.getElementById("thVal").textContent = state.threshold;
+  }
+
+  // ---------- sparkline ----------
+  var history = [];
+
+  function nearestMeasuredCurve() {
+    if (!state.secAgg) { return { data: REAL_RUN.fedavg, label: "measured, plaintext FedAvg" }; }
+    var anchors = [[0, "fedavg_secagg", "measured, SecAgg, σ=0"], [0.1, "dp_0.1", "measured, σ≈0.1"], [0.5, "dp_0.5", "measured, σ≈0.5"], [2.0, "dp_2.0", "measured, σ≈2.0"]];
+    var best = anchors[0], bestDist = Infinity;
+    anchors.forEach(function (a) { var d = Math.abs(a[0] - state.sigma); if (d < bestDist) { bestDist = d; best = a; } });
+    return { data: REAL_RUN[best[1]], label: best[2] };
+  }
+
+  function renderSparkline() {
+    var svgEl = document.getElementById("sparkline");
+    var w = 230, h = 92, padL = 26, padR = 4, padT = 6, padB = 14;
+    svgEl.innerHTML = "";
+    var pts = history.slice(-30);
+    var measured = state.showMeasured ? nearestMeasuredCurve() : null;
+    document.getElementById("sparkLegend").hidden = !measured;
+    if (measured) { document.getElementById("measuredLabel").textContent = measured.label; }
+
+    svgEl.appendChild(make("line", { class: "spark-axis", x1: padL, y1: padT, x2: padL, y2: h - padB }));
+    svgEl.appendChild(make("line", { class: "spark-axis", x1: padL, y1: h - padB, x2: w - padR, y2: h - padB }));
+
+    if (pts.length < 2 && !measured) {
+      svgEl.appendChild(make("text", { class: "spark-txt", x: (w + padL) / 2, y: h / 2, "text-anchor": "middle" }, "run rounds →"));
+      return;
+    }
+
+    var liveVals = pts.map(function (p) { return p.rmse; });
+    var allVals = liveVals.slice();
+    if (measured) { allVals = allVals.concat(measured.data); }
+    var min = allVals.length ? Math.min.apply(null, allVals) : 0;
+    var max = allVals.length ? Math.max.apply(null, allVals) : 1;
+    if (max - min < 1e-6) { max = min + 1e-6; }
+    var nPoints = Math.max(pts.length, measured ? measured.data.length : 0, 2);
+
+    function X(i, n) { return padL + (i / (n - 1)) * (w - padL - padR); }
+    function Y(v) { return (h - padB) - ((v - min) / (max - min)) * (h - padB - padT); }
+
+    if (measured) {
+      var md = measured.data.map(function (v, i) { return (i === 0 ? "M" : "L") + X(i, nPoints).toFixed(1) + "," + Y(v).toFixed(1); }).join(" ");
+      svgEl.appendChild(make("path", { class: "spark-line measured", d: md }));
+    }
+    if (pts.length >= 2) {
+      var d = pts.map(function (p, i) { return (i === 0 ? "M" : "L") + X(i, nPoints).toFixed(1) + "," + Y(p.rmse).toFixed(1); }).join(" ");
+      svgEl.appendChild(make("path", { class: "spark-line", d: d }));
+      var last = pts[pts.length - 1];
+      svgEl.appendChild(make("circle", { class: "spark-dot", cx: X(pts.length - 1, nPoints), cy: Y(last.rmse), r: 2 }));
+    }
+    svgEl.appendChild(make("text", { class: "spark-txt", x: padL, y: padT + 3, "text-anchor": "start" }, max.toFixed(2)));
+    svgEl.appendChild(make("text", { class: "spark-txt", x: padL, y: h - padB - 1, "text-anchor": "start" }, min.toFixed(2)));
+  }
+
+  // ---------- round state machine ----------
+  var PHASES = ["train", "mask", "result"];
+
+  // Off by default -- turbine fleets can drift on their own between
+  // rounds if you turn this on, but at most one turbine changes per round
+  // (repair more likely than a new fault, so the fleet trends back toward
+  // fully up), never a whole grid of dots flipping at once.
+  function simulateChurn() {
+    if (!state.churn) { return false; }
+    var down = [], up = [];
+    state.farms.forEach(function (f) {
+      f.turbineUp.forEach(function (isUp, i) { (isUp ? up : down).push([f, i]); });
+    });
+    if (down.length && Math.random() < 0.5) {
+      var r = down[Math.floor(Math.random() * down.length)];
+      r[0].turbineUp[r[1]] = true;
+      return true;
+    }
+    if (up.length && Math.random() < 0.1) {
+      var d = up[Math.floor(Math.random() * up.length)];
+      d[0].turbineUp[d[1]] = false;
+      return true;
+    }
+    return false;
+  }
+
+  async function stepRound() {
+    if (state.stepping) { return; }
+    state.stepping = true;
+    document.getElementById("stepBtn").disabled = true;
+    var churned = simulateChurn();
+    if (churned) { renderFarmsAndLinks(); }
+
+    state.round += 1;
+    var online = onlineFarms();
+    var total = state.farms.length;
+
+    for (var i = 0; i < PHASES.length; i++) {
+      var p = PHASES[i];
+      if (p === "result" && state.secAgg && online.length < state.threshold) {
+        state.phase = "aborted";
+        renderReadout();
+        break;
+      }
+      state.phase = p;
+      renderReadout();
+      await sleep(state.speed);
+    }
+
+    var aborted = state.secAgg && online.length < state.threshold;
+    if (aborted) {
+      state.lastOk = false;
+      appendLog("t=" + state.round + " → ABORTED (" + online.length + "/" + state.threshold + " of K=" + total + ") — Σ unchanged", "abort");
+    } else {
+      state.successfulRounds += 1;
+      state.lastOk = true;
+      var rmse = computeRmse(online);
+      history.push({ round: state.round, rmse: rmse });
+      var mech = state.secAgg ? "SecAgg" : "plaintext";
+      var upTotal = state.farms.reduce(function (s, f) { return s + f.turbineUp.filter(Boolean).length; }, 0);
+      var fleetTotal = state.farms.reduce(function (s, f) { return s + f.turbines; }, 0);
+      appendLog("t=" + state.round + " → OK via " + mech + " — survivors " +
+        online.map(function (f) { return f.id; }).join(",") + " (" + online.length + "/" + total + ") — RMSE≈" + rmse.toFixed(3) +
+        " — fleet " + upTotal + "/" + fleetTotal + " up" + (churned ? " (changed this round)" : ""));
+      renderSparkline();
+    }
+
+    await sleep(Math.max(120, state.speed * 0.3));
+    state.phase = "idle";
+    renderReadout();
+
+    state.stepping = false;
+    document.getElementById("stepBtn").disabled = false;
+  }
+
+  async function playLoop() {
+    while (state.playing) {
+      await stepRound();
+      if (!state.playing) { break; }
+      await sleep(Math.max(200, state.speed * 0.5));
+    }
+  }
+
+  function reset() {
+    state.farms = REAL_FARMS.map(function (f) { return { id: f.id, turbines: f.turbines, online: true, synthetic: false, turbineUp: allUp(f.turbines) }; });
+    state.round = 0;
+    state.successfulRounds = 0;
+    state.phase = "idle";
+    state.playing = false;
+    state.lastOk = undefined;
+    state.threshold = 2;
+    history = [];
+    document.getElementById("playBtn").innerHTML = '<span class="bracket">[</span>play<span class="bracket">]</span>';
+    renderThresholdVal();
+    appendLog("──── reset — t=0 ────", "divider");
+    renderAll();
+    renderSparkline();
+  }
+
+  // ---------- wire controls ----------
+  document.getElementById("stepBtn").addEventListener("click", stepRound);
+
+  document.getElementById("playBtn").addEventListener("click", function () {
+    state.playing = !state.playing;
+    this.innerHTML = state.playing
+      ? '<span class="bracket">[</span>pause<span class="bracket">]</span>'
+      : '<span class="bracket">[</span>play<span class="bracket">]</span>';
+    if (state.playing) { playLoop(); }
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", reset);
+
+  var SPEED_BASE_MS = 500; // the slider's 1.00x reference
+  var speedLiveVal = document.getElementById("speedLiveVal");
+  document.getElementById("speedSlider").addEventListener("input", function (e) {
+    var mult = parseFloat(e.target.value);
+    state.speed = SPEED_BASE_MS / mult;
+    speedLiveVal.textContent = "rt " + mult.toFixed(2) + "x";
+  });
+
+  var secAggToggle = document.getElementById("secAggToggle");
+  var secAggVal = document.getElementById("secAggVal");
+  secAggToggle.addEventListener("click", function () {
+    state.secAgg = !state.secAgg;
+    secAggVal.textContent = state.secAgg ? "on" : "off";
+    renderFarmsAndLinks();
+  });
+
+  document.getElementById("thMinus").addEventListener("click", function () {
+    state.threshold = Math.max(1, state.threshold - 1);
+    renderThresholdVal();
+  });
+  document.getElementById("thPlus").addEventListener("click", function () {
+    state.threshold = Math.min(state.farms.length, state.threshold + 1);
+    renderThresholdVal();
+  });
+
+  var sigmaSlider = document.getElementById("sigmaSlider");
+  var sigmaVal = document.getElementById("sigmaVal");
+  sigmaSlider.addEventListener("input", function (e) {
+    state.sigma = parseFloat(e.target.value);
+    sigmaVal.textContent = state.sigma.toFixed(2);
+  });
+
+  var measuredToggle = document.getElementById("measuredToggle");
+  measuredToggle.addEventListener("click", function () {
+    state.showMeasured = !state.showMeasured;
+    measuredToggle.innerHTML = state.showMeasured
+      ? '<span class="bracket">[</span>hide measured<span class="bracket">]</span>'
+      : '<span class="bracket">[</span>show measured<span class="bracket">]</span>';
+    renderSparkline();
+  });
+
+  var churnToggle = document.getElementById("churnToggle");
+  var churnVal = document.getElementById("churnVal");
+  churnToggle.addEventListener("click", function () {
+    state.churn = !state.churn;
+    churnVal.textContent = state.churn ? "on" : "off";
+    appendLog("fleet drift " + (state.churn ? "enabled — at most one turbine changes per round" : "disabled"));
+  });
+
+  var explainBtn = document.getElementById("explainBtn");
+  var explainNote = document.getElementById("explainNote");
+  explainBtn.addEventListener("click", function () {
+    explainNote.hidden = !explainNote.hidden;
+  });
+
+  // ---------- init ----------
+  renderAll();
+  renderSparkline();
+  renderThresholdVal();
+  appendLog("ready — K=3 (A,B,C), τ=2, masking on. click a turbine, a client, or step.");
+})();
+</script>

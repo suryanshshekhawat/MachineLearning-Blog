@@ -1,0 +1,160 @@
+<meta charset="utf-8" />
+<title>Differential Privacy — basics</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #ffffff; --ink: #000000; --ink-soft: #5a5a5a; --ink-faint: #bcbcbc;
+    --font-serif: "Times New Roman", Times, "Liberation Serif", Georgia, serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: var(--font-serif); }
+  body { padding: 0.9rem 1.1rem 1.1rem; }
+  h1 { font-size: 0.95rem; font-weight: normal; font-style: italic; margin: 0 0 0.15rem; }
+  .sub { font-size: 0.76rem; color: var(--ink-soft); margin: 0 0 0.8rem; }
+  #stage { width: 100%; height: auto; display: block; }
+  .axis { stroke: var(--ink); stroke-width: 1; }
+  .tick { stroke: var(--ink-faint); stroke-width: 1; }
+  .marker-line { stroke: var(--ink-soft); stroke-width: 1; stroke-dasharray: 2 3; }
+  .marker-label { font-family: var(--font-serif); font-style: italic; font-size: 12px; }
+  .dot-d { fill: var(--ink); }
+  .dot-dprime { fill: var(--bg); stroke: var(--ink); stroke-width: 1.2; }
+  .readout { font-family: var(--font-serif); font-size: 13px; }
+  .readout.hard { font-weight: bold; }
+  .legend { font-size: 0.74rem; color: var(--ink-soft); display: flex; gap: 1.2rem; margin-top: 0.3rem; }
+  .legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: -1px; margin-right: 0.3rem; }
+  .legend .sw.d { background: var(--ink); }
+  .legend .sw.dprime { background: var(--bg); border: 1.2px solid var(--ink); }
+  footer { display: flex; align-items: center; gap: 1rem; margin-top: 0.7rem; flex-wrap: wrap; }
+  button.ctl {
+    font-family: var(--font-serif); font-size: 0.82rem; background: none; border: none;
+    color: var(--ink); cursor: pointer; padding: 0.1rem 0; border-bottom: 1px solid transparent;
+  }
+  button.ctl:hover { border-bottom-color: var(--ink); }
+  .sigma-ctl { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none; width: 140px; height: 1px; background: var(--ink); border: none; margin: 0;
+  }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 9px; height: 9px; background: var(--ink); cursor: pointer; border-radius: 0; }
+  input[type="range"]::-moz-range-thumb { width: 9px; height: 9px; background: var(--ink); border: none; cursor: pointer; border-radius: 0; }
+  .hint { font-size: 0.72rem; color: var(--ink-soft); font-style: italic; }
+</style>
+
+<h1>differential privacy &mdash; can you tell which dataset this came from?</h1>
+<p class="sub">D and D&prime; differ by exactly one record. Each release is D or D&prime; plus noise &mdash; guess which, then check &sigma;</p>
+
+<svg id="stage" viewBox="0 0 640 190">
+  <g id="ticks"></g>
+  <line class="axis" x1="40" y1="150" x2="600" y2="150"></line>
+  <g id="markers"></g>
+  <g id="dots"></g>
+</svg>
+
+<div class="legend">
+  <span><i class="sw d"></i>released from D</span>
+  <span><i class="sw dprime"></i>released from D&prime;</span>
+</div>
+
+<p class="readout" id="readout"></p>
+
+<footer>
+  <button class="ctl" id="releaseBtn">[ release a sample ]</button>
+  <button class="ctl" id="resetBtn">[ clear ]</button>
+  <span class="sigma-ctl">&sigma;=<span id="sigmaVal" class="readout" style="font-size:0.82rem">0.05</span>
+    <input type="range" id="sigmaSlider" min="0.02" max="0.9" step="0.02" value="0.05">
+  </span>
+  <span class="hint">low &sigma;: the two clusters stay apart. high &sigma;: they blur into one &mdash; that overlap <em>is</em> the privacy guarantee.</span>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function make(tag, attrs, text) {
+    var n = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  var X0 = 40, X1 = 600, VMIN = 0, VMAX = 1;
+  var D = 0.40, DPRIME = 0.48;
+  var sigma = 0.05;
+  var samples = [];
+  var MAX_SAMPLES = 60;
+  var rowY = {};
+
+  function X(v) { return X0 + ((v - VMIN) / (VMAX - VMIN)) * (X1 - X0); }
+
+  function gaussian() {
+    var u = 1 - Math.random(), v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  var ticksLayer = document.getElementById("ticks");
+  var markersLayer = document.getElementById("markers");
+  var dotsLayer = document.getElementById("dots");
+
+  function renderStatic() {
+    ticksLayer.innerHTML = "";
+    for (var t = 0; t <= 10; t++) {
+      var v = VMIN + (t / 10) * (VMAX - VMIN);
+      ticksLayer.appendChild(make("line", { class: "tick", x1: X(v), y1: 146, x2: X(v), y2: 154 }));
+    }
+    markersLayer.innerHTML = "";
+    [["D", D], ["D′", DPRIME]].forEach(function (m) {
+      markersLayer.appendChild(make("line", { class: "marker-line", x1: X(m[1]), y1: 30, x2: X(m[1]), y2: 150 }));
+      markersLayer.appendChild(make("text", { x: X(m[1]), y: 22, "text-anchor": "middle", class: "marker-label" }, m[0]));
+    });
+  }
+
+  function renderDots() {
+    dotsLayer.innerHTML = "";
+    samples.forEach(function (s, i) {
+      var y = 140 - (i % 20) * 5.5;
+      var cls = s.from === "D" ? "dot-d" : "dot-dprime";
+      dotsLayer.appendChild(make("circle", { class: cls, cx: X(s.value).toFixed(1), cy: y, r: 3.4 }));
+    });
+  }
+
+  function renderReadout() {
+    var el = document.getElementById("readout");
+    var sep = Math.abs(DPRIME - D);
+    var hard = sigma > sep * 1.2;
+    el.textContent = samples.length === 0
+      ? "no releases yet — click “release a sample” a few times"
+      : (hard
+        ? "at σ=" + sigma.toFixed(2) + ", the two clouds overlap — an observer can no longer tell D from D′ with confidence"
+        : "at σ=" + sigma.toFixed(2) + ", the two clouds are still mostly separate — D and D′ remain distinguishable");
+    el.className = "readout" + (hard ? " hard" : "");
+  }
+
+  function renderAll() {
+    renderStatic();
+    renderDots();
+    renderReadout();
+  }
+
+  document.getElementById("releaseBtn").addEventListener("click", function () {
+    var from = Math.random() < 0.5 ? "D" : "Dprime";
+    var base = from === "D" ? D : DPRIME;
+    var value = Math.min(VMAX, Math.max(VMIN, base + gaussian() * sigma));
+    samples.push({ from: from, value: value });
+    if (samples.length > MAX_SAMPLES) samples.shift();
+    renderAll();
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    samples = [];
+    renderAll();
+  });
+
+  document.getElementById("sigmaSlider").addEventListener("input", function (e) {
+    sigma = parseFloat(e.target.value);
+    document.getElementById("sigmaVal").textContent = sigma.toFixed(2);
+    renderReadout();
+  });
+
+  renderAll();
+})();
+</script>
