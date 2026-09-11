@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const PORT = process.env.PORT || 8791;
-const PUBLIC_DIR = path.join(__dirname, "public");
+const PUBLIC_DIR = path.join(__dirname, "docs");
 const DATA_FILE = path.join(__dirname, "data", "db.json");
 
 function normalizeComment(c) {

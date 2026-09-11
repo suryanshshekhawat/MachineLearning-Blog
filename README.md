@@ -17,20 +17,20 @@ Serves everything on `http://localhost:8791` (override with `PORT=xxxx`).
 
 ## Structure
 
-- `server.js` — Express app: serves `public/` as static files, plus the
+- `server.js` — Express app: serves `docs/` as static files, plus the
   JSON API below. Keep this and `data/` out of anything served publicly.
 - `data/db.json` — JSON file storing download counts and comments. Created
   automatically; back this up if you care about the comment history.
-- `public/index.html` — page shell: header nav (Articles, Projects, Notes,
+- `docs/index.html` — page shell: header nav (Articles, Projects, Notes,
   Publications, About) and the section panels. Sections switch via the URL
   hash (`#notes`, `#about`, ...) — no page reloads.
-- `public/css/style.css` — all styling (serif, vanilla-HTML link colours,
+- `docs/css/style.css` — all styling (serif, vanilla-HTML link colours,
   white background).
-- `public/js/app.js` — hash router, Notes list/detail logic, PDF.js
+- `docs/js/app.js` — hash router, Notes list/detail logic, PDF.js
   rendering, download-count display, and the comments widget.
-- `public/content/notes.json` — index of notes (title, date, summary, and
+- `docs/content/notes.json` — index of notes (title, date, summary, and
   paths to the note's PDF and LaTeX zip).
-- `public/downloads/` — each note's compiled PDF and LaTeX source `.zip`.
+- `docs/downloads/` — each note's compiled PDF and LaTeX source `.zip`.
 
 ## API
 
@@ -53,8 +53,8 @@ counts) sit above it, and a comment thread sits below.
 
 ## Adding a new note
 
-1. Add the PDF and its LaTeX `.zip` to `public/downloads/`.
-2. Add an entry to `public/content/notes.json`:
+1. Add the PDF and its LaTeX `.zip` to `docs/downloads/`.
+2. Add an entry to `docs/content/notes.json`:
    ```json
    {
      "id": "unique-id",
