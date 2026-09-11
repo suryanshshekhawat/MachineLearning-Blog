@@ -28,20 +28,19 @@ if (window.pdfjsLib) {
 }
 
 let notesIndex = null;
-let pdfRenderToken = 0;
 
-async function renderPdf(url) {
-  const token = ++pdfRenderToken;
-  pdfViewerEl.innerHTML = '<p class="pdf-status">Loading PDF…</p>';
+async function renderPdfInto(container, url, tokenHolder) {
+  const token = ++tokenHolder.value;
+  container.innerHTML = '<p class="pdf-status">Loading PDF…</p>';
 
   const pdf = await pdfjsLib.getDocument(url).promise;
-  if (token !== pdfRenderToken) return;
+  if (token !== tokenHolder.value) return;
 
-  pdfViewerEl.innerHTML = "";
-  const containerWidth = pdfViewerEl.clientWidth - 16;
+  container.innerHTML = "";
+  const containerWidth = container.clientWidth - 16;
 
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    if (token !== pdfRenderToken) return;
+    if (token !== tokenHolder.value) return;
 
     const page = await pdf.getPage(pageNum);
     const unscaledViewport = page.getViewport({ scale: 1 });
@@ -53,12 +52,17 @@ async function renderPdf(url) {
     canvas.height = viewport.height;
     canvas.style.width = `${viewport.width / (window.devicePixelRatio || 1)}px`;
 
-    if (token !== pdfRenderToken) return;
-    pdfViewerEl.appendChild(canvas);
+    if (token !== tokenHolder.value) return;
+    container.appendChild(canvas);
 
     const ctx = canvas.getContext("2d");
     await page.render({ canvasContext: ctx, viewport }).promise;
   }
+}
+
+const notePdfToken = { value: 0 };
+function renderPdf(url) {
+  return renderPdfInto(pdfViewerEl, url, notePdfToken);
 }
 
 async function fetchJSON(url, opts) {
@@ -366,7 +370,7 @@ async function enterNotesList() {
   renderNotesList(notes);
   notesListEl.hidden = false;
   notesDetailEl.hidden = true;
-  pdfRenderToken++;
+  notePdfToken.value++;
   pdfViewerEl.innerHTML = "";
   commentsEl.innerHTML = "";
 }
@@ -448,10 +452,6 @@ function renderProjectBlock(block) {
   if (block.type === "iframe") {
     const wrap = document.createElement("div");
     wrap.className = "project-iframe-wrap";
-    const eyebrow = document.createElement("p");
-    eyebrow.className = "project-iframe-eyebrow";
-    eyebrow.textContent = "Interactive — try it";
-    wrap.appendChild(eyebrow);
     if (block.caption) {
       const cap = document.createElement("p");
       cap.className = "project-iframe-caption";
@@ -508,6 +508,35 @@ function renderProjectBlock(block) {
       a.innerHTML = `${item.label} <span class="download-count" data-count-type="${item.type || `file${i}`}"></span>`;
       wrap.appendChild(a);
     });
+    return wrap;
+  }
+
+  if (block.type === "collapsible-pdf") {
+    const wrap = document.createElement("div");
+    wrap.className = "project-collapsible";
+
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "project-collapsible-toggle";
+    toggle.textContent = `[+] ${block.label}`;
+
+    const pane = document.createElement("div");
+    pane.className = "pdf-viewer project-collapsible-pane";
+    pane.hidden = true;
+
+    let rendered = false;
+    const tokenHolder = { value: 0 };
+    toggle.addEventListener("click", () => {
+      const opening = pane.hidden;
+      pane.hidden = !opening;
+      toggle.textContent = `[${opening ? "–" : "+"}] ${block.label}`;
+      if (opening && !rendered) {
+        rendered = true;
+        renderPdfInto(pane, block.src, tokenHolder);
+      }
+    });
+
+    wrap.append(toggle, pane);
     return wrap;
   }
 

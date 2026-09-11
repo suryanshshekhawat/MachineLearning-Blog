@@ -502,22 +502,12 @@ body.project-reading #content {
   margin: 1.8em 0;
 }
 
-.project-iframe-eyebrow {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--accent);
-  margin: 0 0 6px;
-  font-style: normal;
-}
-
 .project-iframe-caption {
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  font-style: italic;
   color: var(--muted);
   margin: 0 0 10px;
-  padding: 10px 14px;
-  background: var(--bg-raised);
-  border: 1px solid var(--border);
+  max-width: 760px;
 }
 
 .project-iframe {
@@ -544,6 +534,30 @@ body.project-reading #content {
   border: 1px solid var(--border);
   padding: 8px 10px;
   text-align: left;
+}
+
+.project-collapsible {
+  max-width: 760px;
+  margin: 1.6em auto;
+}
+
+.project-collapsible-toggle {
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: none;
+  border: none;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.project-collapsible-toggle:hover {
+  color: var(--accent-visited);
+}
+
+.project-collapsible-pane {
+  margin-top: 14px;
 }
 
 .project-table-note {
@@ -645,22 +659,20 @@ body.project-reading #content {
 
 .project-stat {
   max-width: 760px;
-  margin: 2em auto;
-  text-align: center;
-  padding: 1.2em 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  margin: 1.6em auto;
+  padding-left: 18px;
+  border-left: 3px solid var(--border);
 }
 
 .project-stat-value {
-  font-size: 2.4rem;
-  margin: 0;
+  font-size: 1.5rem;
   font-style: italic;
+  margin: 0;
 }
 
 .project-stat-label {
-  margin: 4px 0 0;
-  font-size: 0.85rem;
+  margin: 2px 0 0;
+  font-size: 0.95rem;
   color: var(--muted);
 }
 
