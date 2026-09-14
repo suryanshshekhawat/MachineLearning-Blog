@@ -1,6 +1,6 @@
 const SECTIONS = ["articles", "projects", "notes", "publications", "about"];
 const DEFAULT_SECTION = "articles";
-const IFRAME_ASSET_VERSION = "2";
+const IFRAME_ASSET_VERSION = "3";
 
 const navLinks = document.querySelectorAll(".nav-link");
 const panels = {};
