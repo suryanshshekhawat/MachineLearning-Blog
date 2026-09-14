@@ -1,5 +1,5 @@
 <meta charset="utf-8" />
-<title>Secure Aggregation — basics</title>
+<title>Secure Aggregation: basics</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root {
@@ -12,22 +12,17 @@
   body { padding: 0.9rem 1.1rem 1.1rem; }
   h1 { font-size: 0.95rem; font-weight: normal; font-style: italic; margin: 0 0 0.15rem; }
   .sub { font-size: 0.76rem; color: var(--ink-soft); margin: 0 0 0.8rem; }
-  #stage { width: 100%; height: auto; display: block; }
-  .client-box { fill: var(--bg); stroke: var(--ink); stroke-width: 1; cursor: pointer; }
-  .client-box.off { stroke-dasharray: 3 3; stroke: var(--ink-faint); }
-  .client-group:hover .client-box { stroke-width: 1.6; }
-  .client-label { font-family: var(--font-serif); font-style: italic; font-size: 13px; }
-  .client-val { font-family: var(--font-mono); font-size: 12px; }
-  .client-val.off { fill: var(--ink-faint); }
-  .server-box { fill: var(--bg); stroke: var(--ink); stroke-width: 1.4; }
-  .server-label { font-family: var(--font-serif); font-style: italic; font-size: 14px; }
-  .link { stroke: var(--ink); stroke-width: 1; }
-  .link.off { stroke: var(--ink-faint); stroke-dasharray: 1 4; }
-  .packet { fill: var(--bg); stroke: var(--ink); stroke-width: 1; }
-  .packet.masked { fill: url(#hatch); }
-  .packet-txt { font-family: var(--font-mono); font-size: 9px; }
-  .eq { font-family: var(--font-serif); font-style: italic; font-size: 13px; }
-  .eq.abort { font-weight: bold; }
+  table.masktbl { border-collapse: collapse; font-family: var(--font-mono); font-size: 12px; width: 100%; margin: 0 0 0.6rem; }
+  table.masktbl th, table.masktbl td { padding: 4px 8px; text-align: left; white-space: nowrap; }
+  table.masktbl th { font-family: var(--font-serif); font-style: italic; font-weight: normal; font-size: 12.5px; border-bottom: 1px solid var(--ink); text-align: left; }
+  table.masktbl td.dim { color: var(--ink-faint); }
+  table.masktbl tr.off td { color: var(--ink-faint); font-style: italic; }
+  table.masktbl tr.total td { border-top: 1px solid var(--ink); font-weight: bold; padding-top: 6px; }
+  table.masktbl td.masked-cell { position: relative; }
+  .masked-veil { letter-spacing: 1px; }
+  .status-line { font-size: 12.5px; margin: 0.3rem 0 0; min-height: 1.2em; }
+  .status-line.abort { font-weight: bold; }
+  .status-line.ok { color: var(--ink-soft); }
   footer { display: flex; align-items: center; gap: 1rem; margin-top: 0.6rem; flex-wrap: wrap; }
   button.ctl {
     font-family: var(--font-serif); font-size: 0.82rem; background: none; border: none;
@@ -40,123 +35,127 @@
     border: 1px solid var(--ink); background: var(--bg); cursor: pointer; padding: 0;
   }
   .hint { font-size: 0.72rem; color: var(--ink-soft); font-style: italic; }
+  .farm-name { cursor: pointer; }
+  .farm-name:hover { text-decoration: underline; }
 </style>
 
-<h1>secure aggregation &mdash; what the server actually sees</h1>
-<p class="sub">each client masks its number before sending it; the masks cancel only when everything is summed</p>
+<h1>secure aggregation: what the server actually receives</h1>
+<p class="sub">every client's true vector gets a random mask added before it leaves the client. the masks are built to cancel out once summed</p>
 
-<svg id="stage" viewBox="0 0 640 220">
-  <defs>
-    <pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-      <rect width="5" height="5" fill="var(--bg)"></rect>
-      <line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="1.2"></line>
-    </pattern>
-  </defs>
-  <g id="links"></g>
-  <g id="packets"></g>
-  <g id="clients"></g>
-  <g id="server"></g>
-  <g id="eqLayer"></g>
-</svg>
+<table class="masktbl" id="maskTable"></table>
+<p class="status-line" id="statusLine"></p>
 
 <footer>
   <button class="ctl" id="runBtn">[ run round ]</button>
   <button class="ctl" id="maskToggle">masking: <span class="bracket">[</span><span id="maskVal">on</span><span class="bracket">]</span></button>
-  <span class="valctl">τ=<span id="thVal">2</span>
+  <span class="valctl">&tau;=<span id="thVal">2</span>
     <button id="thMinus">&minus;</button><button id="thPlus">+</button>
   </span>
-  <span class="hint">click a client box to drop it &mdash; drop enough to fall below τ and the round aborts</span>
+  <span class="hint">click a farm's name to drop it, then drop enough to fall below &tau; and the round aborts</span>
 </footer>
 
 <script>
 (function () {
   "use strict";
-  var SVGNS = "http://www.w3.org/2000/svg";
-  function make(tag, attrs, text) {
-    var n = document.createElementNS(SVGNS, tag);
-    for (var k in attrs) n.setAttribute(k, attrs[k]);
-    if (text != null) n.textContent = text;
-    return n;
+  function fmt(x) { return (x >= 0 ? " " : "") + x.toFixed(2); }
+  function vec(v) { return "(" + v.map(fmt).join(", ") + ")"; }
+  function randVec() {
+    return [Math.round((Math.random() * 2 - 1) * 100) / 100, Math.round((Math.random() * 2 - 1) * 100) / 100];
   }
+  function addVecs(vecs) {
+    return vecs.reduce(function (acc, v) { return [acc[0] + v[0], acc[1] + v[1]]; }, [0, 0]);
+  }
+  function subVec(a, b) { return [a[0] - b[0], a[1] - b[1]]; }
 
   var clients = [
-    { id: "A", x: 90, val: 0, online: true },
-    { id: "B", x: 320, val: 0, online: true },
-    { id: "C", x: 550, val: 0, online: true }
+    { id: "A", w: [0, 0], mask: [0, 0], online: true },
+    { id: "B", w: [0, 0], mask: [0, 0], online: true },
+    { id: "C", w: [0, 0], mask: [0, 0], online: true }
   ];
-  var SERVER = { x: 320, y: 40 };
-  var BOX_TOP = 130, BOX_W = 120, BOX_H = 50;
   var state = { masking: true, threshold: 2 };
 
-  var linksLayer = document.getElementById("links");
-  var packetsLayer = document.getElementById("packets");
-  var clientsLayer = document.getElementById("clients");
-  var serverLayer = document.getElementById("server");
-  var eqLayer = document.getElementById("eqLayer");
+  var maskTable = document.getElementById("maskTable");
+  var statusLine = document.getElementById("statusLine");
 
   function onlineClients() { return clients.filter(function (c) { return c.online; }); }
 
-  function renderServer() {
-    serverLayer.innerHTML = "";
-    var w = 130, h = 46;
-    serverLayer.appendChild(make("rect", { class: "server-box", x: SERVER.x - w / 2, y: SERVER.y - h / 2, width: w, height: h }));
-    serverLayer.appendChild(make("text", { x: SERVER.x, y: SERVER.y + 5, "text-anchor": "middle", class: "server-label" }, "server"));
+  // Masks are drawn so that, across every client (online or not), they sum
+  // to exactly zero -- the last client's mask is whatever value makes that
+  // true. This is a simplified stand-in for the real protocol's pairwise
+  // Diffie-Hellman-derived masks, which cancel the same way but per pair of
+  // clients rather than via one shared total.
+  function reroll() {
+    var free = clients.slice(0, clients.length - 1);
+    free.forEach(function (c) { c.mask = randVec(); c.w = randVec(); });
+    var last = clients[clients.length - 1];
+    last.w = randVec();
+    var sumOthers = addVecs(free.map(function (c) { return c.mask; }));
+    last.mask = [-sumOthers[0], -sumOthers[1]];
   }
 
-  function renderClients() {
-    clientsLayer.innerHTML = "";
-    linksLayer.innerHTML = "";
-    packetsLayer.innerHTML = "";
+  function renderTable() {
+    maskTable.innerHTML = "";
+    var thead = document.createElement("tr");
+    thead.innerHTML = "<th>client</th><th>true w<sub>u</sub></th><th>mask</th><th>server receives</th>";
+    maskTable.appendChild(thead);
+
     clients.forEach(function (c) {
-      linksLayer.appendChild(make("line", {
-        class: "link" + (c.online ? "" : " off"),
-        x1: SERVER.x, y1: SERVER.y + 23, x2: c.x, y2: BOX_TOP
-      }));
-
-      if (c.online) {
-        var mx = (SERVER.x + c.x) / 2, my = (SERVER.y + 23 + BOX_TOP) / 2;
-        packetsLayer.appendChild(make("rect", { class: "packet" + (state.masking ? " masked" : ""), x: mx - 14, y: my - 10, width: 28, height: 20 }));
-        packetsLayer.appendChild(make("text", {
-          x: mx, y: my + 4, "text-anchor": "middle", class: "packet-txt"
-        }, state.masking ? "?" : c.val.toFixed(2)));
+      var row = document.createElement("tr");
+      if (!c.online) row.className = "off";
+      var masked = addVecs([c.w, c.mask]);
+      var nameCell = "<td class='farm-name' data-id='" + c.id + "'>farm " + c.id + (c.online ? "" : " (dropped)") + "</td>";
+      var wCell = "<td>" + vec(c.w) + "</td>";
+      var maskCell = "<td class='dim'>" + (state.masking ? "+ " + vec(c.mask) : "&mdash;") + "</td>";
+      var seenCell;
+      if (!c.online) {
+        seenCell = "<td class='dim'>&mdash;</td>";
+      } else if (state.masking) {
+        seenCell = "<td class='masked-veil'>" + vec(masked) + "</td>";
+      } else {
+        seenCell = "<td>" + vec(c.w) + "</td>";
       }
-
-      var g = make("g", { class: "client-group", tabindex: "0", role: "button" });
-      g.appendChild(make("rect", { class: "client-box" + (c.online ? "" : " off"), x: c.x - BOX_W / 2, y: BOX_TOP, width: BOX_W, height: BOX_H }));
-      g.appendChild(make("text", { x: c.x, y: BOX_TOP + 20, "text-anchor": "middle", class: "client-label" }, "farm " + c.id));
-      g.appendChild(make("text", { x: c.x, y: BOX_TOP + 38, "text-anchor": "middle", class: "client-val" + (c.online ? "" : " off") },
-        "w=" + c.val.toFixed(2)));
-      g.addEventListener("click", function () { c.online = !c.online; renderAll(); });
-      clientsLayer.appendChild(g);
+      row.innerHTML = nameCell + wCell + maskCell + seenCell;
+      maskTable.appendChild(row);
     });
-  }
 
-  function renderEq() {
-    eqLayer.innerHTML = "";
     var online = onlineClients();
     var aborted = state.masking && online.length < state.threshold;
-    var text, cls = "eq";
-    if (aborted) {
-      text = "only " + online.length + "/" + state.threshold + " survivors — round ABORTED, Σ=∅ (nothing revealed)";
-      cls += " abort";
-    } else {
-      var sum = online.reduce(function (s, c) { return s + c.val; }, 0);
-      text = state.masking
-        ? "server receives " + online.length + " masked values it cannot read — masks cancel — Σw = " + sum.toFixed(3)
-        : "masking off — server reads each w directly — Σw = " + sum.toFixed(3);
+    var trueSum = addVecs(online.map(function (c) { return c.w; }));
+
+    if (!aborted) {
+      var totalRow = document.createElement("tr");
+      totalRow.className = "total";
+      var seenSum = state.masking
+        ? addVecs(online.map(function (c) { return addVecs([c.w, c.mask]); }))
+        : trueSum;
+      totalRow.innerHTML = "<td>sum of survivors</td><td colspan='2'></td><td>&Sigma; = " + vec(seenSum) + "</td>";
+      maskTable.appendChild(totalRow);
     }
-    eqLayer.appendChild(make("text", { x: 320, y: 210, "text-anchor": "middle", class: cls }, text));
+
+    renderStatus(online, aborted, trueSum);
+  }
+
+  function renderStatus(online, aborted, trueSum) {
+    if (aborted) {
+      statusLine.className = "status-line abort";
+      statusLine.textContent = "only " + online.length + "/" + state.threshold + " survivors, round ABORTED: nothing revealed";
+      return;
+    }
+    statusLine.className = "status-line ok";
+    if (state.masking) {
+      statusLine.textContent = "the masks above cancel exactly. the sum the server recovers matches Σw = " + vec(trueSum) + ", even though no individual masked value looks anything like the true w it came from.";
+    } else {
+      statusLine.textContent = "masking is off, so the server reads every client's true w directly.";
+    }
   }
 
   function renderAll() {
-    renderClients();
-    renderServer();
-    renderEq();
+    renderTable();
     document.getElementById("thVal").textContent = state.threshold;
   }
 
   document.getElementById("runBtn").addEventListener("click", function () {
-    clients.forEach(function (c) { if (c.online) c.val = Math.round((Math.random() * 2 - 1) * 100) / 100; });
+    reroll();
     renderAll();
   });
 
@@ -175,7 +174,14 @@
     renderAll();
   });
 
-  clients.forEach(function (c) { c.val = Math.round((Math.random() * 2 - 1) * 100) / 100; });
+  maskTable.addEventListener("click", function (e) {
+    var cell = e.target.closest(".farm-name");
+    if (!cell) return;
+    var c = clients.filter(function (x) { return x.id === cell.dataset.id; })[0];
+    if (c) { c.online = !c.online; renderAll(); }
+  });
+
+  reroll();
   renderAll();
 })();
 </script>

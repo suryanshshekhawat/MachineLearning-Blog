@@ -476,18 +476,18 @@ function renderProjectBlock(block) {
   if (block.type === "iframe") {
     const wrap = document.createElement("div");
     wrap.className = "project-iframe-wrap";
-    if (block.caption) {
-      const cap = document.createElement("p");
-      cap.className = "project-iframe-caption";
-      cap.innerHTML = block.caption;
-      wrap.appendChild(cap);
-    }
     const frame = document.createElement("iframe");
     frame.className = "project-iframe";
     frame.src = block.src;
     frame.style.height = `${block.height || 600}px`;
     frame.loading = "lazy";
     wrap.appendChild(frame);
+    if (block.caption) {
+      const cap = document.createElement("p");
+      cap.className = "project-iframe-caption";
+      cap.innerHTML = block.caption;
+      wrap.appendChild(cap);
+    }
     return wrap;
   }
 
@@ -575,7 +575,7 @@ function teardownScrollSpy() {
 
 function updateActiveChapter() {
   if (!activeChapterEls.length) return;
-  const threshold = 90; // roughly the sticky nav's height
+  const threshold = 30;
   let current = activeChapterEls[0];
   for (const entry of activeChapterEls) {
     if (entry.el.getBoundingClientRect().top - threshold <= 0) {

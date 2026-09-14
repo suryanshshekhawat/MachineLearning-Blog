@@ -505,9 +505,10 @@ body.project-reading #content {
 .project-iframe-caption {
   font-size: 0.92rem;
   font-style: italic;
+  text-align: center;
   color: var(--muted);
-  margin: 0 0 10px;
-  max-width: 760px;
+  margin: 10px auto 0;
+  max-width: 640px;
 }
 
 .project-iframe {
@@ -567,19 +568,30 @@ body.project-reading #content {
   margin-top: 6px;
 }
 
-/* ---- Project chapter nav ---- */
+/* ---- Project layout: sticky left contents pane ---- */
+
+.project-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 44px;
+}
+
+.project-main {
+  flex: 1;
+  min-width: 0;
+}
 
 .project-nav {
+  flex: 0 0 180px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 18px;
+  flex-direction: column;
+  gap: 2px;
   position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--bg);
-  padding: 12px 0;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--border);
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding-right: 18px;
+  border-right: 1px solid var(--border);
 }
 
 .project-nav button {
@@ -587,12 +599,13 @@ body.project-reading #content {
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  text-align: left;
   background: none;
   border: none;
+  border-left: 2px solid transparent;
   color: var(--muted);
   cursor: pointer;
-  padding: 4px 0;
-  border-bottom: 2px solid transparent;
+  padding: 5px 0 5px 10px;
 }
 
 .project-nav button:hover {
@@ -601,7 +614,38 @@ body.project-reading #content {
 
 .project-nav button.active {
   color: var(--accent);
-  border-bottom-color: var(--accent);
+  border-left-color: var(--accent);
+}
+
+@media (max-width: 860px) {
+  .project-layout {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .project-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    position: static;
+    max-height: none;
+    overflow: visible;
+    width: 100%;
+    padding: 10px 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .project-nav button {
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    padding: 4px 0;
+  }
+
+  .project-nav button.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--accent);
+  }
 }
 
 /* ---- Project chapters, TL;DR, stats ---- */
@@ -612,7 +656,7 @@ body.project-reading #content {
   display: flex;
   align-items: baseline;
   gap: 16px;
-  scroll-margin-top: 60px;
+  scroll-margin-top: 20px;
 }
 
 .project-chapter-number {

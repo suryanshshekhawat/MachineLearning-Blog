@@ -1,5 +1,5 @@
 <meta charset="utf-8" />
-<title>Differential Privacy — basics</title>
+<title>Differential Privacy: basics</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root {
@@ -40,8 +40,8 @@
   .hint { font-size: 0.72rem; color: var(--ink-soft); font-style: italic; }
 </style>
 
-<h1>differential privacy &mdash; can you tell which dataset this came from?</h1>
-<p class="sub">D and D&prime; differ by exactly one record. Each release is D or D&prime; plus noise &mdash; guess which, then check &sigma;</p>
+<h1>differential privacy: can you tell which dataset this came from?</h1>
+<p class="sub">D and D&prime; differ by exactly one record. Each release is D or D&prime; plus noise, guess which, then check &sigma;</p>
 
 <svg id="stage" viewBox="0 0 640 190">
   <g id="ticks"></g>
@@ -63,7 +63,7 @@
   <span class="sigma-ctl">&sigma;=<span id="sigmaVal" class="readout" style="font-size:0.82rem">0.05</span>
     <input type="range" id="sigmaSlider" min="0.02" max="0.9" step="0.02" value="0.05">
   </span>
-  <span class="hint">low &sigma;: the two clusters stay apart. high &sigma;: they blur into one &mdash; that overlap <em>is</em> the privacy guarantee.</span>
+  <span class="hint">low &sigma;: the two clusters stay apart. high &sigma;: they blur into one, and that overlap <em>is</em> the privacy guarantee.</span>
 </footer>
 
 <script>
@@ -122,10 +122,10 @@
     var sep = Math.abs(DPRIME - D);
     var hard = sigma > sep * 1.2;
     el.textContent = samples.length === 0
-      ? "no releases yet — click “release a sample” a few times"
+      ? "no releases yet, click “release a sample” a few times"
       : (hard
-        ? "at σ=" + sigma.toFixed(2) + ", the two clouds overlap — an observer can no longer tell D from D′ with confidence"
-        : "at σ=" + sigma.toFixed(2) + ", the two clouds are still mostly separate — D and D′ remain distinguishable");
+        ? "at σ=" + sigma.toFixed(2) + ", the two clouds overlap, so an observer can no longer tell D from D′ with confidence"
+        : "at σ=" + sigma.toFixed(2) + ", the two clouds are still mostly separate, and D and D′ remain distinguishable");
     el.className = "readout" + (hard ? " hard" : "");
   }
 
