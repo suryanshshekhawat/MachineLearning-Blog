@@ -49,9 +49,9 @@ a:visited { color: var(--accent-visited); }
 /* ---- Header ---- */
 
 .site-header {
-  max-width: var(--max-width);
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 20px 24px 0;
+  padding: 20px 32px 0;
 }
 
 .about-block {
