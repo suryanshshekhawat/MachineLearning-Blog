@@ -66,6 +66,68 @@ async function renderPdfInto(container, url, tokenHolder) {
   }
 }
 
+// A single floating PDF modal, reused for every "read this PDF" prompt on the
+// page. It renders into its own scroll container that floats above the page
+// rather than growing it, and it's fully closable without scrolling anywhere.
+let pdfModal = null;
+
+function ensurePdfModal() {
+  if (pdfModal) return pdfModal;
+
+  const backdrop = document.createElement("div");
+  backdrop.className = "pdf-modal-backdrop";
+  backdrop.hidden = true;
+
+  const modal = document.createElement("div");
+  modal.className = "pdf-modal";
+
+  const header = document.createElement("div");
+  header.className = "pdf-modal-header";
+  const titleEl = document.createElement("span");
+  titleEl.className = "pdf-modal-title";
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "pdf-modal-close";
+  closeBtn.textContent = "[ close ]";
+  header.append(titleEl, closeBtn);
+
+  const body = document.createElement("div");
+  body.className = "pdf-modal-body pdf-viewer";
+
+  modal.append(header, body);
+  backdrop.appendChild(modal);
+  document.body.appendChild(backdrop);
+
+  function close() {
+    backdrop.hidden = true;
+    document.body.classList.remove("modal-open");
+  }
+
+  closeBtn.addEventListener("click", close);
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !backdrop.hidden) close();
+  });
+
+  pdfModal = { backdrop, titleEl, body };
+  return pdfModal;
+}
+
+const pdfModalTokens = new Map(); // src -> tokenHolder, so re-opening the same PDF doesn't re-render it
+
+function openPdfModal(title, src) {
+  const m = ensurePdfModal();
+  m.titleEl.textContent = title;
+  m.backdrop.hidden = false;
+  document.body.classList.add("modal-open");
+
+  if (m.body.dataset.src !== src) {
+    m.body.dataset.src = src;
+    if (!pdfModalTokens.has(src)) pdfModalTokens.set(src, { value: 0 });
+    renderPdfInto(m.body, src, pdfModalTokens.get(src));
+  }
+}
+
 async function fetchJSON(url, opts) {
   const res = await fetch(url, opts);
   if (!res.ok) throw new Error(`Request failed: ${res.status}`);
@@ -542,25 +604,10 @@ function renderProjectBlock(block) {
     const toggle = document.createElement("button");
     toggle.type = "button";
     toggle.className = "project-collapsible-toggle";
-    toggle.textContent = `[+] ${block.label}`;
+    toggle.textContent = `[ ${block.label} ]`;
+    toggle.addEventListener("click", () => openPdfModal(block.label, block.src));
 
-    const pane = document.createElement("div");
-    pane.className = "pdf-viewer project-collapsible-pane";
-    pane.hidden = true;
-
-    let rendered = false;
-    const tokenHolder = { value: 0 };
-    toggle.addEventListener("click", () => {
-      const opening = pane.hidden;
-      pane.hidden = !opening;
-      toggle.textContent = `[${opening ? "–" : "+"}] ${block.label}`;
-      if (opening && !rendered) {
-        rendered = true;
-        renderPdfInto(pane, block.src, tokenHolder);
-      }
-    });
-
-    wrap.append(toggle, pane);
+    wrap.appendChild(toggle);
     return wrap;
   }
 
