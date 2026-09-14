@@ -35,7 +35,7 @@ if (window.pdfjsLib) {
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 }
 
-async function renderPdfInto(container, url, tokenHolder) {
+async function renderPdfInto(container, url, tokenHolder, zoom = 1) {
   const token = ++tokenHolder.value;
   container.innerHTML = '<p class="pdf-status">Loading PDF…</p>';
 
@@ -43,6 +43,7 @@ async function renderPdfInto(container, url, tokenHolder) {
   if (token !== tokenHolder.value) return;
 
   container.innerHTML = "";
+  container.dataset.numPages = pdf.numPages;
   const containerWidth = container.clientWidth - 16;
 
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -50,13 +51,14 @@ async function renderPdfInto(container, url, tokenHolder) {
 
     const page = await pdf.getPage(pageNum);
     const unscaledViewport = page.getViewport({ scale: 1 });
-    const scale = (containerWidth / unscaledViewport.width) * (window.devicePixelRatio || 1);
+    const scale = (containerWidth / unscaledViewport.width) * zoom * (window.devicePixelRatio || 1);
     const viewport = page.getViewport({ scale });
 
     const canvas = document.createElement("canvas");
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     canvas.style.width = `${viewport.width / (window.devicePixelRatio || 1)}px`;
+    canvas.dataset.pageNum = pageNum;
 
     if (token !== tokenHolder.value) return;
     container.appendChild(canvas);
@@ -64,6 +66,107 @@ async function renderPdfInto(container, url, tokenHolder) {
     const ctx = canvas.getContext("2d");
     await page.render({ canvasContext: ctx, viewport }).promise;
   }
+}
+
+// Zoom + page-counter controls shared by every PDF surface (inline Notes/
+// Articles viewers and the floating modal). Callers own where the returned
+// zoomGroup/pageGroup elements get placed; this just wires the behaviour.
+const PDF_DEFAULT_ZOOM = 0.75;
+
+function createPdfControls(bodyEl) {
+  const tokenHolder = { value: 0 };
+  const ZOOM_MIN = 0.5, ZOOM_MAX = 3, ZOOM_STEP = 0.25;
+  let zoom = PDF_DEFAULT_ZOOM;
+  let src = null;
+
+  const zoomGroup = document.createElement("div");
+  zoomGroup.className = "pdf-toolbar-zoom";
+  const zoomOutBtn = document.createElement("button");
+  zoomOutBtn.type = "button";
+  zoomOutBtn.className = "pdf-zoom-btn";
+  zoomOutBtn.setAttribute("aria-label", "Zoom out");
+  zoomOutBtn.textContent = "−";
+  const zoomLevelEl = document.createElement("span");
+  zoomLevelEl.className = "pdf-zoom-level";
+  zoomLevelEl.textContent = `${Math.round(PDF_DEFAULT_ZOOM * 100)}%`;
+  const zoomInBtn = document.createElement("button");
+  zoomInBtn.type = "button";
+  zoomInBtn.className = "pdf-zoom-btn";
+  zoomInBtn.setAttribute("aria-label", "Zoom in");
+  zoomInBtn.textContent = "+";
+  zoomGroup.append(zoomOutBtn, zoomLevelEl, zoomInBtn);
+
+  const pageGroup = document.createElement("div");
+  pageGroup.className = "pdf-toolbar-page";
+  const pageCurrentEl = document.createElement("span");
+  pageCurrentEl.className = "pdf-page-current";
+  pageCurrentEl.textContent = "–";
+  const pageTotalEl = document.createElement("span");
+  pageTotalEl.className = "pdf-page-total";
+  pageTotalEl.textContent = "–";
+  pageGroup.append("Page ", pageCurrentEl, " / ", pageTotalEl);
+
+  function updatePageCounter() {
+    const canvases = bodyEl.querySelectorAll("canvas[data-page-num]");
+    if (!canvases.length) { pageCurrentEl.textContent = "–"; return; }
+    // A fixed viewport offset (not tied to bodyEl's own position, which drifts
+    // as the surrounding page scrolls) marking "the page currently being read".
+    const marker = 100;
+    let current = canvases[0];
+    canvases.forEach(c => { if (c.getBoundingClientRect().top <= marker) current = c; });
+    pageCurrentEl.textContent = current.dataset.pageNum;
+  }
+
+  window.addEventListener("scroll", updatePageCounter, { passive: true });
+  bodyEl.addEventListener("scroll", updatePageCounter, { passive: true });
+
+  async function rerender() {
+    if (!src) return;
+    await renderPdfInto(bodyEl, src, tokenHolder, zoom);
+    pageTotalEl.textContent = bodyEl.dataset.numPages || "–";
+    updatePageCounter();
+  }
+
+  function setZoom(next) {
+    zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, next));
+    zoomLevelEl.textContent = `${Math.round(zoom * 100)}%`;
+    rerender();
+  }
+
+  zoomOutBtn.addEventListener("click", () => setZoom(zoom - ZOOM_STEP));
+  zoomInBtn.addEventListener("click", () => setZoom(zoom + ZOOM_STEP));
+
+  function load(newSrc) {
+    if (src === newSrc) return;
+    src = newSrc;
+    zoom = PDF_DEFAULT_ZOOM;
+    zoomLevelEl.textContent = `${Math.round(PDF_DEFAULT_ZOOM * 100)}%`;
+    rerender();
+  }
+
+  function reset() {
+    src = null;
+    tokenHolder.value++;
+    bodyEl.innerHTML = "";
+    pageCurrentEl.textContent = "–";
+    pageTotalEl.textContent = "–";
+  }
+
+  return { zoomGroup, pageGroup, load, reset };
+}
+
+// Builds the toolbar + scrollable body inside an inline .pdf-viewer mount
+// (used by the Notes and Articles detail panels).
+function initInlinePdfViewer(mountEl) {
+  mountEl.innerHTML = "";
+  const toolbar = document.createElement("div");
+  toolbar.className = "pdf-toolbar";
+  const body = document.createElement("div");
+  body.className = "pdf-viewer-body";
+  const controls = createPdfControls(body);
+  toolbar.append(controls.zoomGroup, controls.pageGroup);
+  mountEl.append(toolbar, body);
+  return controls;
 }
 
 // A single floating PDF modal, reused for every "read this PDF" prompt on the
@@ -85,15 +188,21 @@ function ensurePdfModal() {
   header.className = "pdf-modal-header";
   const titleEl = document.createElement("span");
   titleEl.className = "pdf-modal-title";
+
+  const body = document.createElement("div");
+  body.className = "pdf-modal-body pdf-viewer-body";
+  const controls = createPdfControls(body);
+
+  const tools = document.createElement("div");
+  tools.className = "pdf-modal-tools";
+  tools.append(controls.zoomGroup, controls.pageGroup);
+
   const closeBtn = document.createElement("button");
   closeBtn.type = "button";
   closeBtn.className = "pdf-modal-close";
   closeBtn.textContent = "[ close ]";
-  header.append(titleEl, closeBtn);
 
-  const body = document.createElement("div");
-  body.className = "pdf-modal-body pdf-viewer";
-
+  header.append(titleEl, tools, closeBtn);
   modal.append(header, body);
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
@@ -109,23 +218,16 @@ function ensurePdfModal() {
     if (e.key === "Escape" && !backdrop.hidden) close();
   });
 
-  pdfModal = { backdrop, titleEl, body };
+  pdfModal = { backdrop, titleEl, controls };
   return pdfModal;
 }
-
-const pdfModalTokens = new Map(); // src -> tokenHolder, so re-opening the same PDF doesn't re-render it
 
 function openPdfModal(title, src) {
   const m = ensurePdfModal();
   m.titleEl.textContent = title;
   m.backdrop.hidden = false;
   document.body.classList.add("modal-open");
-
-  if (m.body.dataset.src !== src) {
-    m.body.dataset.src = src;
-    if (!pdfModalTokens.has(src)) pdfModalTokens.set(src, { value: 0 });
-    renderPdfInto(m.body, src, pdfModalTokens.get(src));
-  }
+  m.controls.load(src);
 }
 
 async function fetchJSON(url, opts) {
@@ -368,7 +470,7 @@ function renderComments(kind, id, containerEl) {
 // they get their own logic further down.
 function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloadsEl, pdfViewerEl, commentsEl, backBtn }) {
   let index = null;
-  const pdfToken = { value: 0 };
+  const pdfControls = initInlinePdfViewer(pdfViewerEl);
 
   async function loadIndex() {
     if (!index) index = await fetch(contentUrl).then(r => r.json());
@@ -423,7 +525,8 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
     listEl.hidden = true;
     detailEl.hidden = false;
 
-    if (item.pdf) renderPdfInto(pdfViewerEl, item.pdf, pdfToken);
+    if (item.pdf) pdfControls.load(item.pdf);
+    else pdfControls.reset();
     renderComments(kind, id, commentsEl);
   }
 
@@ -431,8 +534,7 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
     renderList(await loadIndex());
     listEl.hidden = false;
     detailEl.hidden = true;
-    pdfToken.value++;
-    pdfViewerEl.innerHTML = "";
+    pdfControls.reset();
     commentsEl.innerHTML = "";
   }
 
@@ -543,6 +645,16 @@ function renderProjectBlock(block) {
     frame.src = block.src;
     frame.style.height = `${block.height || 600}px`;
     frame.loading = "lazy";
+    // Same-origin widget pages: size the frame to its actual content so it
+    // never scrolls internally -- the surrounding page scrolls instead.
+    frame.addEventListener("load", () => {
+      try {
+        const doc = frame.contentDocument;
+        const resize = () => { frame.style.height = `${doc.documentElement.scrollHeight}px`; };
+        resize();
+        new ResizeObserver(resize).observe(doc.documentElement);
+      } catch { /* cross-origin fallback: keep the fixed height */ }
+    });
     wrap.appendChild(frame);
     if (block.caption) {
       const cap = document.createElement("p");

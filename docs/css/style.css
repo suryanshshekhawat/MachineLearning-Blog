@@ -261,23 +261,74 @@ body.project-reading #content {
 .pdf-viewer {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 22px;
-  padding: 28px 0 10px;
   background: var(--bg-raised);
   border: 1px solid var(--ink);
   box-shadow: 6px 6px 0 var(--border);
 }
 
-.pdf-viewer canvas {
+.pdf-toolbar {
+  flex: 0 0 auto;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--ink);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.pdf-toolbar-zoom,
+.pdf-toolbar-page {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdf-zoom-btn {
+  font-family: inherit;
+  font-size: 0.85rem;
+  width: 24px;
+  height: 24px;
+  line-height: 1;
+  border: 1px solid var(--ink);
+  background: var(--bg);
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0;
+}
+
+.pdf-zoom-btn:hover {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.pdf-zoom-level {
+  min-width: 3.4em;
+  text-align: center;
+}
+
+.pdf-viewer-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding: 22px 0 10px;
+  overflow-x: auto;
+}
+
+.pdf-viewer-body canvas {
   display: block;
-  max-width: calc(100% - 16px);
   height: auto;
   background: #fff;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
-.pdf-viewer .pdf-status {
+.pdf-viewer-body .pdf-status {
   padding: 40px 0;
   color: var(--muted);
   font-style: italic;
@@ -489,7 +540,6 @@ body.project-reading #content {
 
 .project-figure img {
   max-width: 100%;
-  border: 1px solid var(--ink);
 }
 
 .project-figure figcaption {
@@ -514,8 +564,6 @@ body.project-reading #content {
 .project-iframe {
   display: block;
   width: 100%;
-  border: 1px solid var(--ink);
-  box-shadow: 6px 6px 0 var(--border);
 }
 
 .project-table-wrap {
@@ -601,6 +649,14 @@ body.project-reading #content {
   font-size: 0.95rem;
 }
 
+.pdf-modal-tools {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .pdf-modal-close {
   flex-shrink: 0;
   font-family: inherit;
@@ -621,8 +677,6 @@ body.project-reading #content {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  border: none;
-  box-shadow: none;
 }
 
 body.modal-open {
@@ -632,6 +686,7 @@ body.modal-open {
 @media (max-width: 700px) {
   .pdf-modal-backdrop { padding: 0; }
   .pdf-modal { max-width: none; height: 100vh; }
+  .pdf-modal-header { flex-wrap: wrap; row-gap: 8px; }
 }
 
 .project-table-note {
