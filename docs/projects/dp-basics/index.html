@@ -19,6 +19,19 @@
   .marker-label { font-family: var(--font-serif); font-style: italic; font-size: 12px; }
   .dot-d { fill: var(--ink); }
   .dot-dprime { fill: var(--bg); stroke: var(--ink); stroke-width: 1.2; }
+  .dot-new { transform-box: fill-box; transform-origin: center; animation: dot-pop 0.5s ease-out; }
+  .dot-halo {
+    fill: none; stroke: var(--ink); stroke-width: 1.5; opacity: 0.8;
+    animation: halo-ring 0.6s ease-out forwards;
+  }
+  @keyframes dot-pop {
+    0% { transform: scale(2.4); opacity: 0; }
+    60% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes halo-ring {
+    0% { r: 4; opacity: 0.8; }
+    100% { r: 16; opacity: 0; }
+  }
   .readout { font-family: var(--font-serif); font-size: 13px; }
   .readout.hard { font-weight: bold; }
   .legend { font-size: 0.74rem; color: var(--ink-soft); display: flex; gap: 1.2rem; margin-top: 0.3rem; }
@@ -112,8 +125,13 @@
     dotsLayer.innerHTML = "";
     samples.forEach(function (s, i) {
       var y = 140 - (i % 20) * 5.5;
-      var cls = s.from === "D" ? "dot-d" : "dot-dprime";
-      dotsLayer.appendChild(make("circle", { class: cls, cx: X(s.value).toFixed(1), cy: y, r: 3.4 }));
+      var isNewest = i === samples.length - 1;
+      var cls = (s.from === "D" ? "dot-d" : "dot-dprime") + (isNewest ? " dot-new" : "");
+      var cx = X(s.value).toFixed(1);
+      if (isNewest) {
+        dotsLayer.appendChild(make("circle", { class: "dot-halo", cx: cx, cy: y, r: 4 }));
+      }
+      dotsLayer.appendChild(make("circle", { class: cls, cx: cx, cy: y, r: 3.4 }));
     });
   }
 

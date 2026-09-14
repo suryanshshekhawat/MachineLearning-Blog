@@ -1,5 +1,6 @@
 const SECTIONS = ["articles", "projects", "notes", "publications", "about"];
 const DEFAULT_SECTION = "articles";
+const IFRAME_ASSET_VERSION = "2";
 
 const navLinks = document.querySelectorAll(".nav-link");
 const panels = {};
@@ -642,7 +643,9 @@ function renderProjectBlock(block) {
     wrap.className = "project-iframe-wrap";
     const frame = document.createElement("iframe");
     frame.className = "project-iframe";
-    frame.src = block.src;
+    // Bump IFRAME_ASSET_VERSION whenever a widget under docs/projects/*
+    // changes, so GitHub Pages' 10-minute cache doesn't serve a stale one.
+    frame.src = `${block.src}?v=${IFRAME_ASSET_VERSION}`;
     frame.style.height = `${block.height || 600}px`;
     frame.loading = "lazy";
     // Same-origin widget pages: size the frame to its actual content so it
