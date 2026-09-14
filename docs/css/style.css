@@ -564,6 +564,7 @@ body.project-reading #content {
 .project-iframe {
   display: block;
   width: 100%;
+  border: none;
 }
 
 .project-table-wrap {
