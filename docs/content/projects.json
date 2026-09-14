@@ -71,7 +71,7 @@
 
       { "type": "text", "html": "<p>Everything above, in one place: the actual protocol visualiser built for this thesis, with federated rounds, dropout, Secure Aggregation and DP noise all running together on the real three-farm CARE topology, plus the measured RMSE curves available to overlay against its own live illustrative one.</p>" },
 
-      { "type": "iframe", "src": "projects/secagg-sandbox/index.html", "height": 620, "caption": "Every control unlocked at once: federated rounds, dropout, Secure Aggregation, DP noise, on the real CARE wind-farm topology." },
+      { "type": "iframe", "src": "projects/secagg-sandbox/index.html", "height": 480, "autoHeight": false, "caption": "Every control unlocked at once: federated rounds, dropout, Secure Aggregation, DP noise, on the real CARE wind-farm topology." },
 
       { "type": "collapsible-pdf", "label": "Read the full literature review (36 pages)", "src": "downloads/thesis-literature-review.pdf" }
     ]

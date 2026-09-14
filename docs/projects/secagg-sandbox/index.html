@@ -22,41 +22,26 @@
 
   body {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     overflow: hidden;
   }
 
   @media (max-width: 860px) {
-    body { height: auto; overflow: auto; }
+    body { height: auto; overflow: auto; flex-direction: column; }
+    .main-col { flex: none; }
+    .terminal-panel { flex: 0 0 220px; border-left: none; border-top: 1px solid var(--ink); }
   }
 
   em.v { font-style: italic; }
 
-  /* ---------- header ---------- */
-  header {
-    flex: none;
+  /* ---------- layout: main column + side terminal ---------- */
+  .main-col {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 0.5rem 1rem 0.4rem;
-    border-bottom: 1px solid var(--ink);
-    font-size: 0.82rem;
+    flex-direction: column;
   }
-  header .title { font-style: italic; }
-  header .meta { color: var(--ink-soft); font-size: 0.76rem; }
-  header .meta button {
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: 0.76rem;
-    color: var(--ink-soft);
-    background: none;
-    border: none;
-    border-bottom: 1px dotted var(--ink-soft);
-    cursor: pointer;
-    padding: 0;
-    margin-left: 0.35rem;
-  }
-  header .meta button:hover { color: var(--ink); border-bottom-color: var(--ink); }
 
   /* ---------- stage ---------- */
   main.stage {
@@ -116,11 +101,58 @@
 
   /* ---------- floating overlays ---------- */
   .float { position: absolute; font-size: 0.72rem; line-height: 1.5; }
-  .float.right-col { top: 0.6rem; right: 0.8rem; text-align: right; color: var(--ink-soft); display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; max-width: 30ch; }
+
+  .legend-box {
+    position: absolute; top: 0.6rem; right: 0.8rem; z-index: 2;
+    max-width: 30ch;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--ink);
+    background: var(--bg);
+    font-size: 0.72rem; line-height: 1.5; color: var(--ink-soft);
+    display: flex; flex-direction: column; gap: 0.45rem;
+  }
+  .legend-box .legend { display: flex; flex-direction: column; gap: 0.15rem; }
+  .legend-box .legend-note button {
+    font-family: var(--font-serif); font-style: italic; font-size: 0.72rem;
+    color: var(--ink-soft); background: none; border: none;
+    border-bottom: 1px dotted var(--ink-soft); cursor: pointer; padding: 0; margin-left: 0.3rem;
+  }
+  .legend-box .legend-note button:hover { color: var(--ink); border-bottom-color: var(--ink); }
   .legend .sample { display: inline-block; width: 16px; border-top: 1px solid var(--ink); margin-right: 0.35rem; vertical-align: middle; }
   .legend .sample.dropped { border-top: 1px dashed var(--ink-faint); }
   .legend .sample.mask { width: 10px; height: 10px; border: 1px solid var(--ink); background: repeating-linear-gradient(45deg, var(--ink) 0 1.5px, transparent 1.5px 4px); vertical-align: -1px; }
   .float.note { font-style: italic; }
+
+  /* ---------- status narrative (below the diagram) ---------- */
+  .status-narrative {
+    flex: none;
+    padding: 0.55rem 1rem;
+    border-top: 1px solid var(--ink);
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+  }
+  .status-line { margin: 0; }
+  .status-line.abort { font-weight: bold; }
+
+  /* ---------- side terminal ---------- */
+  .terminal-panel {
+    flex: 0 0 260px;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--ink);
+  }
+  .terminal-head {
+    flex: none;
+    padding: 0.45rem 0.8rem;
+    border-bottom: 1px solid var(--ink);
+    font-style: italic;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
 
   .float.spark { bottom: 0.7rem; left: 0.8rem; width: 230px; }
   .spark-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.15rem; }
@@ -200,13 +232,12 @@
 
   /* ---------- terminal ---------- */
   .terminal {
-    flex: none;
-    border-top: 1px solid var(--ink);
-    padding: 0.35rem 1rem 0.3rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0.5rem 0.8rem;
     font-family: var(--font-mono);
     font-size: 0.72rem;
     color: var(--ink-soft);
-    height: 128px;
     overflow-y: auto;
   }
   .terminal .line { white-space: pre-wrap; }
@@ -228,91 +259,97 @@
   }
 </style>
 
-<header>
-  <div class="title">secagg &mdash; federated aggregation sandbox</div>
-  <div class="meta">CARE dataset: 3 farms, 36 turbines, <em class="v">K</em>=3 by construction
-    <button id="explainBtn" type="button">why only 3?</button>
-  </div>
-</header>
+<div class="main-col">
+  <main class="stage">
+    <svg id="diagram" viewBox="0 0 1000 480" preserveAspectRatio="xMidYMid meet" role="img"
+         aria-label="Diagram of a secure aggregator connected to a variable number of wind-farm clients, showing which are online, dropped, or synthetic, with controls to add or remove clients.">
+      <defs>
+        <pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+          <rect width="5" height="5" fill="var(--bg)"></rect>
+          <line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="1.4"></line>
+        </pattern>
+        <marker id="arrow" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L8,4 L0,8 z" fill="var(--ink)"></path>
+        </marker>
+      </defs>
+      <g id="linkLayer"></g>
+      <g id="packetLayer"></g>
+      <g id="farmLayer"></g>
+      <g id="serverLayer"></g>
+      <g id="spawnLayer"></g>
+    </svg>
 
-<main class="stage">
-  <svg id="diagram" viewBox="0 0 1000 480" preserveAspectRatio="xMidYMid meet" role="img"
-       aria-label="Diagram of a secure aggregator connected to a variable number of wind-farm clients, showing which are online, dropped, or synthetic, with controls to add or remove clients.">
-    <defs>
-      <pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-        <rect width="5" height="5" fill="var(--bg)"></rect>
-        <line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" stroke-width="1.4"></line>
-      </pattern>
-      <marker id="arrow" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L8,4 L0,8 z" fill="var(--ink)"></path>
-      </marker>
-    </defs>
-    <g id="readout"></g>
-    <g id="linkLayer"></g>
-    <g id="packetLayer"></g>
-    <g id="farmLayer"></g>
-    <g id="serverLayer"></g>
-    <g id="spawnLayer"></g>
-  </svg>
-
-  <div class="float right-col">
-    <div class="legend">
-      <div><span class="sample"></span>online client</div>
-      <div><span class="sample dropped"></span>dropped client</div>
-      <div><span class="sample mask"></span>masked update on wire</div>
-    </div>
-    <div class="note" id="explainNote" hidden>
-      <em class="v">K</em> is fixed at 3 because Gück et al.'s CARE benchmark
-      contains exactly three wind farms. Partitioning by turbine instead of
-      by farm gives <em class="v">K</em>&le;36 real clients &mdash; or use
-      the <span class="mono-sm">+client</span> control on the diagram to add
-      synthetic ones and explore larger <em class="v">K</em> directly.
-    </div>
-  </div>
-
-  <div class="float spark">
-    <div class="spark-head">
-      <span class="cap">RMSE by round</span>
-      <button class="ctl" id="measuredToggle" type="button"><span class="bracket">[</span>show measured<span class="bracket">]</span></button>
-    </div>
-    <svg id="sparkline" viewBox="0 0 230 92"></svg>
-    <div class="spark-legend" id="sparkLegend" hidden>
-      <span><i class="ln"></i>live (this session)</span>
-      <span><i class="ln measured"></i><span id="measuredLabel">measured</span></span>
-    </div>
-    <div class="spark-legend" id="sparkHint">live is a live-updating formula, calibrated to &mdash; not computed from &mdash; an actual training run.</div>
-  </div>
-
-  <div id="channelPanel"></div>
-</main>
-
-<footer class="controls">
-  <div class="ctl-group">
-    <button class="ctl" id="stepBtn" type="button"><span class="bracket">[</span>step<span class="bracket">]</span></button>
-    <button class="ctl" id="playBtn" type="button"><span class="bracket">[</span>play<span class="bracket">]</span></button>
-    <button class="ctl" id="resetBtn" type="button"><span class="bracket">[</span>reset<span class="bracket">]</span></button>
-    <div class="speed-ctl">
-      <div class="speed-live mono-sm" id="speedLiveVal">rt 1.00x</div>
-      <div class="speed-row">
-        <span class="edge-label">0.25x</span>
-        <input type="range" id="speedSlider" min="0.25" max="3" step="0.05" value="1" aria-label="Playback speed, slower at 0.25x, faster at 3x">
-        <span class="edge-label">3x</span>
+    <div class="legend-box">
+      <div class="legend">
+        <div><span class="sample"></span>online client</div>
+        <div><span class="sample dropped"></span>dropped client</div>
+        <div><span class="sample mask"></span>masked update on wire</div>
+      </div>
+      <div class="legend-note">CARE dataset: 3 farms, 36 turbines, <em class="v">K</em>=3 by construction
+        <button id="explainBtn" type="button">why only 3?</button>
+      </div>
+      <div class="note" id="explainNote" hidden>
+        <em class="v">K</em> is fixed at 3 because Gück et al.'s CARE benchmark
+        contains exactly three wind farms. Partitioning by turbine instead of
+        by farm gives <em class="v">K</em>&le;36 real clients &mdash; or use
+        the <span class="mono-sm">+client</span> control on the diagram to add
+        synthetic ones and explore larger <em class="v">K</em> directly.
       </div>
     </div>
+
+    <div class="float spark">
+      <div class="spark-head">
+        <span class="cap">RMSE by round</span>
+        <button class="ctl" id="measuredToggle" type="button"><span class="bracket">[</span>show measured<span class="bracket">]</span></button>
+      </div>
+      <svg id="sparkline" viewBox="0 0 230 92"></svg>
+      <div class="spark-legend" id="sparkLegend" hidden>
+        <span><i class="ln"></i>live (this session)</span>
+        <span><i class="ln measured"></i><span id="measuredLabel">measured</span></span>
+      </div>
+      <div class="spark-legend" id="sparkHint">live is a live-updating formula, calibrated to &mdash; not computed from &mdash; an actual training run.</div>
+    </div>
+
+    <div id="channelPanel"></div>
+  </main>
+
+  <div class="status-narrative">
+    <p class="status-line" id="statusStep"></p>
+    <p class="status-line" id="statusMask"></p>
   </div>
-  <div class="ctl-group">
-    <button class="ctl" id="secAggToggle" type="button">masking: <span class="bracket">[</span><span id="secAggVal">on</span><span class="bracket">]</span></button>
-    <span class="valctl"><em class="v mono-sm" style="font-family:var(--font-serif)">&tau;</em>=<span class="n" id="thVal">2</span>
-      <button id="thMinus" type="button" aria-label="decrease threshold">&minus;</button>
-      <button id="thPlus" type="button" aria-label="increase threshold">+</button>
-    </span>
-    <label class="valctl"><em class="v" style="font-family:var(--font-serif)">&sigma;</em>=<span class="n mono-sm" id="sigmaVal">0.00</span>
-      <input type="range" id="sigmaSlider" min="0" max="2.5" step="0.05" value="0">
-    </label>
-    <button class="ctl" id="churnToggle" type="button" title="At most one turbine changes per round when on -- never more.">fleet drift: <span class="bracket">[</span><span id="churnVal">off</span><span class="bracket">]</span></button>
-  </div>
-</footer>
-<div class="terminal" id="terminal" aria-live="polite" aria-label="Event log"></div>
+
+  <footer class="controls">
+    <div class="ctl-group">
+      <button class="ctl" id="stepBtn" type="button"><span class="bracket">[</span>step<span class="bracket">]</span></button>
+      <button class="ctl" id="playBtn" type="button"><span class="bracket">[</span>play<span class="bracket">]</span></button>
+      <button class="ctl" id="resetBtn" type="button"><span class="bracket">[</span>reset<span class="bracket">]</span></button>
+      <div class="speed-ctl">
+        <div class="speed-live mono-sm" id="speedLiveVal">rt 1.00x</div>
+        <div class="speed-row">
+          <span class="edge-label">0.25x</span>
+          <input type="range" id="speedSlider" min="0.25" max="3" step="0.05" value="1" aria-label="Playback speed, slower at 0.25x, faster at 3x">
+          <span class="edge-label">3x</span>
+        </div>
+      </div>
+    </div>
+    <div class="ctl-group">
+      <button class="ctl" id="secAggToggle" type="button">masking: <span class="bracket">[</span><span id="secAggVal">on</span><span class="bracket">]</span></button>
+      <span class="valctl"><em class="v mono-sm" style="font-family:var(--font-serif)">&tau;</em>=<span class="n" id="thVal">2</span>
+        <button id="thMinus" type="button" aria-label="decrease threshold">&minus;</button>
+        <button id="thPlus" type="button" aria-label="increase threshold">+</button>
+      </span>
+      <label class="valctl"><em class="v" style="font-family:var(--font-serif)">&sigma;</em>=<span class="n mono-sm" id="sigmaVal">0.00</span>
+        <input type="range" id="sigmaSlider" min="0" max="2.5" step="0.05" value="0">
+      </label>
+      <button class="ctl" id="churnToggle" type="button" title="At most one turbine changes per round when on -- never more.">fleet drift: <span class="bracket">[</span><span id="churnVal">off</span><span class="bracket">]</span></button>
+    </div>
+  </footer>
+</div>
+
+<aside class="terminal-panel">
+  <div class="terminal-head">event log</div>
+  <div class="terminal" id="terminal" aria-live="polite" aria-label="Event log"></div>
+</aside>
 
 <script>
 (function () {
@@ -378,7 +415,8 @@
   }
 
   var svg = document.getElementById("diagram");
-  var readoutLayer = document.getElementById("readout");
+  var statusStepEl = document.getElementById("statusStep");
+  var statusMaskEl = document.getElementById("statusMask");
   var linkLayer = document.getElementById("linkLayer");
   var packetLayer = document.getElementById("packetLayer");
   var farmLayer = document.getElementById("farmLayer");
@@ -444,30 +482,44 @@
   }
 
   // ---------- rendering ----------
-  function renderReadout() {
-    readoutLayer.innerHTML = "";
-    var y = 26;
-    var items = [
-      "t=" + state.round,
-      "φ: " + phaseWord(state.phase),
-      "Σ=" + (state.phase === "aborted" ? "∅" : (state.history_last_ok === false ? "∅" : (state.lastOk === undefined ? "–" : (state.lastOk ? "OK" : "∅"))))
-    ];
-    var xs = [180, 500, 800];
-    var anchors = ["start", "middle", "end"];
-    items.forEach(function (t, i) {
-      readoutLayer.appendChild(make("text", {
-        x: xs[i], y: y, "text-anchor": anchors[i], class: "readout", "font-size": "13"
-      }, t));
-    });
+  // Two plain-language status lines below the diagram, replacing the old
+  // t=/φ:/Σ= symbolic readout -- one narrates the current round's progress,
+  // the other always states what masking is doing right now.
+  function stepSentence() {
+    if (state.round === 0 && state.phase === "idle") {
+      return "No rounds run yet -- press step or play to begin.";
+    }
+    if (state.phase === "train") {
+      return "Round " + state.round + ": the server broadcasts the current model; each client trains briefly on its own local data.";
+    }
+    if (state.phase === "mask") {
+      return "Round " + state.round + ": clients agree on masking secrets and submit their masked updates.";
+    }
+    if (state.phase === "result") {
+      return "Round " + state.round + ": the server sums the masked updates into one aggregate.";
+    }
+    if (state.phase === "aborted") {
+      return "Round " + state.round + " aborted: only " + onlineFarms().length + "/" + state.threshold + " clients survived, so nothing is revealed.";
+    }
+    if (state.lastOk === false) {
+      return "Round " + state.round + " aborted -- the aggregate is unchanged from last round.";
+    }
+    if (state.lastOk === true && history.length) {
+      return "Round " + state.round + " complete -- aggregate RMSE ≈ " + history[history.length - 1].rmse.toFixed(3) + ".";
+    }
+    return "Round " + state.round + ".";
   }
 
-  function phaseWord(p) {
-    if (p === "idle") { return state.round === 0 ? "ready" : "idle"; }
-    if (p === "train") { return "broadcast + local training"; }
-    if (p === "mask") { return "key exchange + masked submission"; }
-    if (p === "result") { return "aggregating"; }
-    if (p === "aborted") { return "aborted"; }
-    return p;
+  function maskSentence() {
+    return state.secAgg
+      ? "Masking: on -- every client's update is hidden by a random mask before it leaves the client; the server only ever sees the summed total."
+      : "Masking: off -- the server would see each client's raw update in the clear.";
+  }
+
+  function renderReadout() {
+    statusStepEl.textContent = stepSentence();
+    statusStepEl.className = "status-line" + (state.phase === "aborted" || state.lastOk === false ? " abort" : "");
+    statusMaskEl.textContent = maskSentence();
   }
 
   function renderServer() {
@@ -955,6 +1007,7 @@
     state.secAgg = !state.secAgg;
     secAggVal.textContent = state.secAgg ? "on" : "off";
     renderFarmsAndLinks();
+    renderReadout();
   });
 
   document.getElementById("thMinus").addEventListener("click", function () {

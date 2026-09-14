@@ -650,14 +650,19 @@ function renderProjectBlock(block) {
     frame.loading = "lazy";
     // Same-origin widget pages: size the frame to its actual content so it
     // never scrolls internally -- the surrounding page scrolls instead.
-    frame.addEventListener("load", () => {
-      try {
-        const doc = frame.contentDocument;
-        const resize = () => { frame.style.height = `${doc.documentElement.scrollHeight}px`; };
-        resize();
-        new ResizeObserver(resize).observe(doc.documentElement);
-      } catch { /* cross-origin fallback: keep the fixed height */ }
-    });
+    // Widgets that manage their own fixed-viewport layout (autoHeight: false
+    // in projects.json -- e.g. the secagg sandbox) opt out, since measuring
+    // their content height doesn't mean anything for a self-contained app.
+    if (block.autoHeight !== false) {
+      frame.addEventListener("load", () => {
+        try {
+          const doc = frame.contentDocument;
+          const resize = () => { frame.style.height = `${doc.documentElement.scrollHeight}px`; };
+          resize();
+          new ResizeObserver(resize).observe(doc.documentElement);
+        } catch { /* cross-origin fallback: keep the fixed height */ }
+      });
+    }
     wrap.appendChild(frame);
     if (block.caption) {
       const cap = document.createElement("p");
