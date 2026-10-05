@@ -84,20 +84,6 @@
 
   .flow-dot { fill: var(--ink); stroke: var(--ink); stroke-width: 1; }
   .flow-dot.masked { fill: url(#hatch); }
-  .flow-circle { fill: var(--ink); }
-  .flow-circle.masked { fill: none; stroke: var(--ink); stroke-width: 1; }
-
-  .caret { fill: var(--bg); stroke: var(--ink-soft); stroke-width: 1; cursor: pointer; }
-  .caret:hover { fill: var(--grid); }
-  .caret-glyph { stroke: var(--ink-soft); stroke-width: 1; }
-
-  .addbtn, .rmbtn {
-    fill: var(--bg); stroke: var(--ink); stroke-width: 1; cursor: pointer;
-  }
-  .addbtn:hover, .rmbtn:hover { fill: var(--grid); }
-  .addbtn.disabled, .rmbtn.disabled { stroke: var(--ink-faint); cursor: default; pointer-events: none; }
-  .addbtn.disabled text, .rmbtn.disabled text { fill: var(--ink-faint); }
-  .glyph { stroke: var(--ink); stroke-width: 1.2; }
 
   /* ---------- floating overlays ---------- */
   .float { position: absolute; font-size: 0.72rem; line-height: 1.5; }
@@ -112,12 +98,6 @@
     display: flex; flex-direction: column; gap: 0.45rem;
   }
   .legend-box .legend { display: flex; flex-direction: column; gap: 0.15rem; }
-  .legend-box .legend-note button {
-    font-family: var(--font-serif); font-style: italic; font-size: 0.72rem;
-    color: var(--ink-soft); background: none; border: none;
-    border-bottom: 1px dotted var(--ink-soft); cursor: pointer; padding: 0; margin-left: 0.3rem;
-  }
-  .legend-box .legend-note button:hover { color: var(--ink); border-bottom-color: var(--ink); }
   .legend .sample { display: inline-block; width: 16px; border-top: 1px solid var(--ink); margin-right: 0.35rem; vertical-align: middle; }
   .legend .sample.dropped { border-top: 1px dashed var(--ink-faint); }
   .legend .sample.mask { width: 10px; height: 10px; border: 1px solid var(--ink); background: repeating-linear-gradient(45deg, var(--ink) 0 1.5px, transparent 1.5px 4px); vertical-align: -1px; }
@@ -154,11 +134,14 @@
     color: var(--ink-soft);
   }
 
-  .float.spark { bottom: 0.7rem; left: 0.8rem; width: 230px; }
+  .panel-section { flex: none; padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--ink); font-size: 0.72rem; line-height: 1.5; }
   .spark-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.15rem; }
-  .spark-head .cap { color: var(--ink-soft); font-size: 0.68rem; }
+  .spark-head .cap { color: var(--ink-soft); font-size: 0.72rem; font-style: italic; }
   .spark-head button.ctl { font-size: 0.68rem; }
-  #sparkline { width: 230px; height: 92px; display: block; }
+  #sparkline { width: 100%; max-width: 260px; height: auto; display: block; }
+  .inspector { color: var(--ink-soft); min-height: 5.6em; }
+  .inspector .ch-title { font-style: italic; color: var(--ink); }
+  .inspector .mono { font-family: var(--font-mono); font-size: 10px; }
   .spark-axis { stroke: var(--ink-faint); stroke-width: 1; }
   .spark-line { fill: none; stroke: var(--ink); stroke-width: 1.3; }
   .spark-line.measured { stroke: var(--ink-soft); stroke-dasharray: 3 2; stroke-width: 1.1; }
@@ -167,15 +150,6 @@
   .spark-legend { font-size: 0.66rem; color: var(--ink-soft); margin-top: 0.2rem; display: flex; gap: 0.8rem; }
   .spark-legend .ln { display: inline-block; width: 12px; border-top: 1.3px solid var(--ink); margin-right: 0.25rem; vertical-align: middle; }
   .spark-legend .ln.measured { border-top-style: dashed; border-top-color: var(--ink-soft); }
-
-  /* ---------- channel panel ---------- */
-  #channelPanel {
-    position: absolute; display: none; background: var(--bg); border: 1px solid var(--ink);
-    padding: 0.4rem 0.55rem; font-family: var(--font-mono); font-size: 10px; line-height: 1.55;
-    white-space: nowrap; z-index: 5;
-  }
-  #channelPanel.open { display: block; }
-  #channelPanel .ch-title { font-family: var(--font-serif); font-style: italic; font-size: 11px; margin-bottom: 0.15rem; }
 
   /* ---------- controls (footer) ---------- */
   footer.controls {
@@ -210,6 +184,7 @@
     font-family: var(--font-mono); font-size: 0.72rem; width: 16px; height: 16px; line-height: 1;
     border: 1px solid var(--ink); background: var(--bg); cursor: pointer; padding: 0;
   }
+  .valctl button:disabled { border-color: var(--ink-faint); color: var(--ink-faint); cursor: default; }
   .valctl .n { font-family: var(--font-mono); min-width: 1.6ch; text-align: center; font-variant-numeric: tabular-nums; }
 
   input[type="range"] {
@@ -261,7 +236,7 @@
 
 <div class="main-col">
   <main class="stage">
-    <svg id="diagram" viewBox="0 0 1000 480" preserveAspectRatio="xMidYMid meet" role="img"
+    <svg id="diagram" viewBox="0 0 800 440"preserveAspectRatio="xMidYMid meet" role="img"
          aria-label="Diagram of a secure aggregator connected to a variable number of wind-farm clients, showing which are online, dropped, or synthetic, with controls to add or remove clients.">
       <defs>
         <pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
@@ -276,7 +251,6 @@
       <g id="packetLayer"></g>
       <g id="farmLayer"></g>
       <g id="serverLayer"></g>
-      <g id="spawnLayer"></g>
     </svg>
 
     <div class="legend-box">
@@ -285,32 +259,7 @@
         <div><span class="sample dropped"></span>dropped client</div>
         <div><span class="sample mask"></span>masked update on wire</div>
       </div>
-      <div class="legend-note">CARE dataset: 3 farms, 36 turbines, <em class="v">K</em>=3 by construction
-        <button id="explainBtn" type="button">why only 3?</button>
-      </div>
-      <div class="note" id="explainNote" hidden>
-        <em class="v">K</em> is fixed at 3 because Gück et al.'s CARE benchmark
-        contains exactly three wind farms. Partitioning by turbine instead of
-        by farm gives <em class="v">K</em>&le;36 real clients &mdash; or use
-        the <span class="mono-sm">+client</span> control on the diagram to add
-        synthetic ones and explore larger <em class="v">K</em> directly.
-      </div>
     </div>
-
-    <div class="float spark">
-      <div class="spark-head">
-        <span class="cap">RMSE by round</span>
-        <button class="ctl" id="measuredToggle" type="button"><span class="bracket">[</span>show measured<span class="bracket">]</span></button>
-      </div>
-      <svg id="sparkline" viewBox="0 0 230 92"></svg>
-      <div class="spark-legend" id="sparkLegend" hidden>
-        <span><i class="ln"></i>live (this session)</span>
-        <span><i class="ln measured"></i><span id="measuredLabel">measured</span></span>
-      </div>
-      <div class="spark-legend" id="sparkHint">live is a live-updating formula, calibrated to &mdash; not computed from &mdash; an actual training run.</div>
-    </div>
-
-    <div id="channelPanel"></div>
   </main>
 
   <div class="status-narrative">
@@ -333,7 +282,11 @@
       </div>
     </div>
     <div class="ctl-group">
-      <button class="ctl" id="secAggToggle" type="button">masking: <span class="bracket">[</span><span id="secAggVal">on</span><span class="bracket">]</span></button>
+      <span class="valctl">clients
+        <button id="rmBtn" type="button" aria-label="remove last synthetic client">&minus;</button>
+        <button id="addBtn" type="button" aria-label="add a synthetic client">+</button>
+      </span>
+      <button class="ctl" id="secAggToggle" type="button">masking:<span class="bracket">[</span><span id="secAggVal">on</span><span class="bracket">]</span></button>
       <span class="valctl"><em class="v mono-sm" style="font-family:var(--font-serif)">&tau;</em>=<span class="n" id="thVal">2</span>
         <button id="thMinus" type="button" aria-label="decrease threshold">&minus;</button>
         <button id="thPlus" type="button" aria-label="increase threshold">+</button>
@@ -347,6 +300,19 @@
 </div>
 
 <aside class="terminal-panel">
+  <div class="panel-section">
+    <div class="spark-head">
+      <span class="cap">RMSE by round</span>
+      <button class="ctl" id="measuredToggle" type="button"><span class="bracket">[</span>show measured<span class="bracket">]</span></button>
+    </div>
+    <svg id="sparkline" viewBox="0 0 230 92"></svg>
+    <div class="spark-legend" id="sparkLegend" hidden>
+      <span><i class="ln"></i>live (this session)</span>
+      <span><i class="ln measured"></i><span id="measuredLabel">measured</span></span>
+    </div>
+    <div class="spark-legend" id="sparkHint">live is a formula calibrated to, not computed from, a real training run.</div>
+  </div>
+  <div class="panel-section inspector" id="inspector"></div>
   <div class="terminal-head">event log</div>
   <div class="terminal" id="terminal" aria-live="polite" aria-label="Event log"></div>
 </aside>
@@ -399,7 +365,6 @@
     sigma: 0,
     stepping: false,
     showMeasured: false,
-    openChannel: null,
     churn: false
   };
 
@@ -421,17 +386,15 @@
   var packetLayer = document.getElementById("packetLayer");
   var farmLayer = document.getElementById("farmLayer");
   var serverLayer = document.getElementById("serverLayer");
-  var spawnLayer = document.getElementById("spawnLayer");
+  var inspector = document.getElementById("inspector");
   var terminal = document.getElementById("terminal");
   var LOG_CAP = 150;
   var logCount = 0;
 
-  var SERVER = { x: 500, y: 90 };
-  var FARM_TOP = 245;
-  var FARM_BOX_H = 88; // fixed for every client, real or synthetic -- boxes never resize
-  var FARM_MID = FARM_TOP + FARM_BOX_H / 2;
-  var FARM_AREA = { x0: 60, x1: 860 };
-  var SPAWN_X = 930;
+  var SERVER = { x: 400, y: 60 };
+  var FARM_TOP = 230;
+  var FARM_BOX_H = 120; // fixed for every client, real or synthetic -- boxes never resize
+  var FARM_AREA = { x0: 110, x1: 690 };
 
   function turbineGrid(n) {
     var cols = Math.min(10, Math.max(3, Math.round(Math.sqrt(n) * 1.6)));
@@ -533,36 +496,19 @@
     }, "Σ"));
   }
 
-  // Small, slow, continuous dots riding the arrow itself -- not tied to a
-  // round's phases, just a quiet sign the channel is live. Hollow when
-  // masking is on (an update travelling that no one can read in transit),
-  // solid when it's off (the server would see this one in the clear).
-  var FLOW_BOX = 22; // matches the legend's "masked update on wire" sample, just bigger
-  var FLOW_DOT_R = 1.6;
-  var DOT_DUR = 7.2; // slow, continuous loop; the box stays put
+  // One fixed marker sitting on each live wire, reporting the masking state
+  // at a glance: hatched when masking is on (an update no one can read in
+  // transit), plain when it's off (the server would see it in the clear).
+  var FLOW_BOX = 16;
 
   function renderFlowDots(cx, top) {
     var x1 = SERVER.x, y1 = SERVER.y + 25, x2 = cx, y2 = top;
-    var masked = state.secAgg;
-    var boxCls = "flow-dot" + (masked ? " masked" : "");
-    var dotCls = "flow-circle" + (masked ? " masked" : "");
     var half = FLOW_BOX / 2;
     var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-
-    // The box is a fixed marker sitting on the wire, not a travelling
-    // packet: it just reports the current masking state at a glance.
-    packetLayer.appendChild(make("rect", { class: boxCls, x: mx - half, y: my - half, width: FLOW_BOX, height: FLOW_BOX }));
-
-    if (reduceMotion) {
-      packetLayer.appendChild(make("circle", { class: dotCls, cx: mx, cy: my, r: FLOW_DOT_R }));
-      return;
-    }
-    var pathStr = "M" + x1 + "," + y1 + " L" + x2 + "," + y2;
-    [0, 1].forEach(function (k) {
-      var dot = make("circle", { class: dotCls, cx: 0, cy: 0, r: FLOW_DOT_R });
-      dot.appendChild(make("animateMotion", { dur: DOT_DUR + "s", repeatCount: "indefinite", begin: (k * -DOT_DUR / 2) + "s", path: pathStr }));
-      packetLayer.appendChild(dot);
-    });
+    packetLayer.appendChild(make("rect", {
+      class: "flow-dot" + (state.secAgg ? " masked" : ""),
+      x: mx - half, y: my - half, width: FLOW_BOX, height: FLOW_BOX
+    }));
   }
 
   function renderFarmsAndLinks() {
@@ -603,11 +549,11 @@
         class: "farm-hit", x: cx - boxW / 2, y: top, width: boxW, height: boxH
       }));
       g.appendChild(make("text", {
-        x: cx, y: top + 20, "text-anchor": "middle", class: "node-label", "font-size": "16"
+        x: cx, y: top + 24, "text-anchor": "middle", class: "node-label", "font-size": "18"
       }, farm.id));
       var upCount = farm.turbineUp.filter(Boolean).length;
       var nText = make("text", {
-        x: cx, y: top + 34, "text-anchor": "middle", class: "mono-sm", style: "cursor:" + (farm.synthetic ? "pointer" : "default")
+        x: cx, y: top + 40, "text-anchor": "middle", class: "mono-sm", style: "cursor:" + (farm.synthetic ? "pointer" : "default")
       }, upCount === farm.turbines ? ("n=" + farm.turbines) : (upCount + "/" + farm.turbines + " up"));
       if (farm.synthetic) {
         nText.addEventListener("click", function (e) { e.stopPropagation(); rerollFarm(farm.id); });
@@ -621,7 +567,7 @@
       // itself never resizes: denser fleets just get smaller, tighter
       // dots within the same fixed footprint.
       var grid = turbineGrid(farm.turbines);
-      var dotAreaTop = top + 38, dotAreaH = boxH - 38 - 8, dotAreaW = boxW - 16;
+      var dotAreaTop = top + 50, dotAreaH = boxH - 50 - 10, dotAreaW = boxW - 20;
       var colGap = dotAreaW / grid.cols;
       var rowGap = grid.rows > 1 ? dotAreaH / grid.rows : dotAreaH;
       var dotR = Math.max(0.9, Math.min(2.4, Math.min(colGap, rowGap) / 2 - 0.5));
@@ -646,48 +592,22 @@
       g.addEventListener("keydown", function (e) {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleFarm(farm.id); }
       });
+      // Hovering or focusing a client shows its real data characteristics in
+      // the side panel instead of cluttering the diagram.
+      g.addEventListener("mouseenter", function () { hoverFarm = farm.id; renderInspector(); });
+      g.addEventListener("focus", function () { hoverFarm = farm.id; renderInspector(); });
+      g.addEventListener("mouseleave", function () { hoverFarm = null; renderInspector(); });
+      g.addEventListener("blur", function () { hoverFarm = null; renderInspector(); });
       farmLayer.appendChild(g);
-
-      // channel caret: opens a small panel of this client's real data
-      // characteristics (or says so when there is none, for synthetic
-      // clients) -- a second, deliberately separate "channel" from the
-      // online/offline toggle above it.
-      var caret = make("g", {
-        class: "caret", tabindex: "0", role: "button",
-        "aria-label": "Open data channel for farm " + farm.id
-      });
-      caret.appendChild(make("rect", { x: cx - 9, y: top + boxH + 4, width: 18, height: 12 }));
-      caret.appendChild(make("path", { class: "caret-glyph", d: "M" + (cx - 4) + "," + (top + boxH + 8) + " L" + cx + "," + (top + boxH + 12) + " L" + (cx + 4) + "," + (top + boxH + 8), fill: "none" }));
-      caret.addEventListener("click", function (e) { e.stopPropagation(); openChannel(farm.id, caret); });
-      caret.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); openChannel(farm.id, caret); }
-      });
-      farmLayer.appendChild(caret);
     });
 
-    renderSpawnControls(n);
-    refreshOpenChannel();
+    renderClientButtons();
+    renderInspector();
   }
 
-  function renderSpawnControls(n) {
-    spawnLayer.innerHTML = "";
-    var canAdd = n < MAX_FARMS;
-    var canRemove = state.farms.some(function (f) { return f.synthetic; });
-
-    var addG = make("g", { class: "addbtn" + (canAdd ? "" : " disabled"), tabindex: canAdd ? "0" : "-1", role: "button", "aria-label": "Add a synthetic client" });
-    addG.appendChild(make("rect", { x: SPAWN_X - 14, y: FARM_MID - 34, width: 28, height: 28 }));
-    addG.appendChild(make("line", { class: "glyph", x1: SPAWN_X, y1: FARM_MID - 27, x2: SPAWN_X, y2: FARM_MID - 13 }));
-    addG.appendChild(make("line", { class: "glyph", x1: SPAWN_X - 7, y1: FARM_MID - 20, x2: SPAWN_X + 7, y2: FARM_MID - 20 }));
-    if (canAdd) { addG.addEventListener("click", addFarm); addG.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { addFarm(); } }); }
-    spawnLayer.appendChild(addG);
-    spawnLayer.appendChild(make("text", { x: SPAWN_X, y: FARM_MID + 10, "text-anchor": "middle", class: "mono-sm" }, "+client"));
-
-    var rmG = make("g", { class: "rmbtn" + (canRemove ? "" : " disabled"), tabindex: canRemove ? "0" : "-1", role: "button", "aria-label": "Remove last synthetic client" });
-    rmG.appendChild(make("rect", { x: SPAWN_X - 14, y: FARM_MID + 22, width: 28, height: 28 }));
-    rmG.appendChild(make("line", { class: "glyph", x1: SPAWN_X - 7, y1: FARM_MID + 36, x2: SPAWN_X + 7, y2: FARM_MID + 36 }));
-    if (canRemove) { rmG.addEventListener("click", removeFarm); rmG.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { removeFarm(); } }); }
-    spawnLayer.appendChild(rmG);
-    spawnLayer.appendChild(make("text", { x: SPAWN_X, y: FARM_MID + 66, "text-anchor": "middle", class: "mono-sm" }, "-client"));
+  function renderClientButtons() {
+    document.getElementById("addBtn").disabled = state.farms.length >= MAX_FARMS;
+    document.getElementById("rmBtn").disabled = !state.farms.some(function (f) { return f.synthetic; });
   }
 
   function renderAll() {
@@ -764,65 +684,32 @@
     terminal.scrollTop = terminal.scrollHeight;
   }
 
-  // ---------- channel panel ----------
-  var channelPanel = document.getElementById("channelPanel");
-  var stageEl = document.querySelector("main.stage");
+  // ---------- client inspector (side panel) ----------
+  var hoverFarm = null;
 
-  function channelHtml(farm) {
+  function inspectorHtml(farm) {
+    if (!farm) {
+      return 'CARE benchmark: 3 real wind farms, 36 turbines, <em class="v">K</em>=3. ' +
+        'Hover a client to see its data; <span class="mono">clients +</span> adds synthetic ones to explore larger <em class="v">K</em>.';
+    }
     var stats = REAL_FARM_STATS[farm.id];
     var upCount = farm.turbineUp.filter(Boolean).length;
     var fleetLine = 'fleet: ' + upCount + '/' + farm.turbines + ' up' +
       (upCount < farm.turbines ? ' &mdash; reduces this client’s weight' : '');
     if (!stats) {
       return '<div class="ch-title">client ' + farm.id + ' &mdash; synthetic</div>' +
-        'no real telemetry behind this client;<br>its n=' + farm.turbines + ' is a placeholder.<br>' + fleetLine;
+        'no real telemetry behind it; n=' + farm.turbines + ' is a placeholder.<br>' + fleetLine;
     }
     return '<div class="ch-title">client ' + farm.id + ' &mdash; real CARE sample</div>' +
-      'n_train=' + stats.n_train + ' &middot; n_test=' + stats.n_test + '<br>' +
-      'wind̄=' + stats.wind.toFixed(2) + ' m/s &middot; temp̄=' + stats.temp.toFixed(1) + '°C<br>' +
-      'pitch̄=' + stats.pitch.toFixed(1) + '° &middot; rotor̄=' + stats.rotor.toFixed(1) + ' rpm<br>' +
-      'power̄=' + stats.power_mean.toFixed(3) + ' (σ=' + stats.power_std.toFixed(3) + ')<br>' + fleetLine;
+      '<span class="mono">n_train=' + stats.n_train + ' n_test=' + stats.n_test + '<br>' +
+      'wind ' + stats.wind.toFixed(2) + ' m/s, temp ' + stats.temp.toFixed(1) + '°C<br>' +
+      'power ' + stats.power_mean.toFixed(3) + ' (σ ' + stats.power_std.toFixed(3) + ')</span><br>' + fleetLine;
   }
 
-  function positionChannel(farm, caretEl) {
-    channelPanel.innerHTML = channelHtml(farm);
-    var caretRect = caretEl.getBoundingClientRect();
-    var stageRect = stageEl.getBoundingClientRect();
-    channelPanel.style.left = Math.max(4, caretRect.left - stageRect.left - 40) + "px";
-    channelPanel.style.top = (caretRect.bottom - stageRect.top + 4) + "px";
-    channelPanel.classList.add("open");
+  function renderInspector() {
+    var farm = hoverFarm && state.farms.filter(function (f) { return f.id === hoverFarm; })[0];
+    inspector.innerHTML = inspectorHtml(farm || null);
   }
-
-  function openChannel(id, caretEl) {
-    if (state.openChannel === id) { closeChannel(); return; }
-    var farm = state.farms.filter(function (f) { return f.id === id; })[0];
-    if (!farm) { return; }
-    state.openChannel = id;
-    positionChannel(farm, caretEl);
-  }
-
-  function closeChannel() {
-    state.openChannel = null;
-    channelPanel.classList.remove("open");
-  }
-
-  // Called after every re-render (including automatic turbine churn) so an
-  // open channel keeps showing live numbers and stays anchored to the
-  // rebuilt caret, instead of just vanishing under the user.
-  function refreshOpenChannel() {
-    if (!state.openChannel) { return; }
-    var farm = state.farms.filter(function (f) { return f.id === state.openChannel; })[0];
-    if (!farm) { closeChannel(); return; }
-    var caret = Array.prototype.find.call(farmLayer.querySelectorAll(".caret"), function (c) {
-      return c.getAttribute("aria-label") === "Open data channel for farm " + farm.id;
-    });
-    if (!caret) { closeChannel(); return; }
-    positionChannel(farm, caret);
-  }
-
-  document.querySelector("main.stage").addEventListener("click", function (e) {
-    if (state.openChannel && !channelPanel.contains(e.target) && !e.target.closest(".caret")) { closeChannel(); }
-  });
 
   function renderThresholdVal() {
     document.getElementById("thVal").textContent = state.threshold;
@@ -1043,11 +930,8 @@
     appendLog("fleet drift " + (state.churn ? "enabled — at most one turbine changes per round" : "disabled"));
   });
 
-  var explainBtn = document.getElementById("explainBtn");
-  var explainNote = document.getElementById("explainNote");
-  explainBtn.addEventListener("click", function () {
-    explainNote.hidden = !explainNote.hidden;
-  });
+  document.getElementById("addBtn").addEventListener("click", addFarm);
+  document.getElementById("rmBtn").addEventListener("click", removeFarm);
 
   // ---------- init ----------
   renderAll();
