@@ -123,18 +123,21 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.6rem;
     border-left: 1px solid var(--ink);
+    overflow: hidden;
   }
   .terminal-head {
     flex: none;
-    padding: 0.45rem 0.8rem;
-    border-bottom: 1px solid var(--ink);
+    margin-bottom: 0.3rem;
     font-style: italic;
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     color: var(--ink-soft);
   }
 
-  .panel-section { flex: none; padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--ink); font-size: 0.72rem; line-height: 1.5; }
+  .panel-section { flex: none; padding: 0.5rem 0.7rem; border: 1px solid var(--ink); background: var(--bg); font-size: 0.72rem; line-height: 1.5; }
+  .log-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
   .spark-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.15rem; }
   .spark-head .cap { color: var(--ink-soft); font-size: 0.72rem; font-style: italic; }
   .spark-head button.ctl { font-size: 0.68rem; }
@@ -209,11 +212,13 @@
   .terminal {
     flex: 1 1 auto;
     min-height: 0;
-    padding: 0.5rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
     font-family: var(--font-mono);
     font-size: 0.72rem;
     color: var(--ink-soft);
-    overflow-y: auto;
+    overflow: hidden;
   }
   .terminal .line { white-space: pre-wrap; }
   .terminal .line:last-child { color: var(--ink); }
@@ -313,8 +318,10 @@
     <div class="spark-legend" id="sparkHint">live is a formula calibrated to, not computed from, a real training run.</div>
   </div>
   <div class="panel-section inspector" id="inspector"></div>
-  <div class="terminal-head">event log</div>
-  <div class="terminal" id="terminal" aria-live="polite" aria-label="Event log"></div>
+  <div class="panel-section log-card">
+    <div class="terminal-head">latest events</div>
+    <div class="terminal" id="terminal" aria-live="polite" aria-label="Event log"></div>
+  </div>
 </aside>
 
 <script>
@@ -388,7 +395,7 @@
   var serverLayer = document.getElementById("serverLayer");
   var inspector = document.getElementById("inspector");
   var terminal = document.getElementById("terminal");
-  var LOG_CAP = 150;
+  var LOG_CAP = 8; // the log is a short rolling window of recent events, not a scrolling history
   var logCount = 0;
 
   var SERVER = { x: 400, y: 60 };
