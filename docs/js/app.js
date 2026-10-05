@@ -1,6 +1,21 @@
 const SECTIONS = ["articles", "projects", "notes", "publications", "about"];
 const DEFAULT_SECTION = "articles";
-const IFRAME_ASSET_VERSION = "5";
+const IFRAME_ASSET_VERSION = "6";
+
+// True content height of a same-origin widget document: the bottom of its
+// last visible element. documentElement.scrollHeight can't be used because it
+// never reports less than the frame's current height, so frames couldn't shrink.
+function contentHeight(doc) {
+  const win = doc.defaultView;
+  let bottom = 0;
+  for (const el of doc.body.children) {
+    if (el.tagName === "SCRIPT") continue;
+    const r = el.getBoundingClientRect();
+    bottom = Math.max(bottom, r.bottom + win.scrollY + parseFloat(win.getComputedStyle(el).marginBottom || 0));
+  }
+  const cs = win.getComputedStyle(doc.body);
+  return Math.ceil(bottom + parseFloat(cs.paddingBottom || 0) + parseFloat(cs.marginBottom || 0));
+}
 
 const navLinks = document.querySelectorAll(".nav-link");
 const panels = {};
@@ -648,21 +663,28 @@ function renderProjectBlock(block) {
     frame.src = `${block.src}?v=${IFRAME_ASSET_VERSION}`;
     frame.style.height = `${block.height || 600}px`;
     frame.loading = "lazy";
-    // Same-origin widget pages: size the frame to its actual content so it
-    // never scrolls internally -- the surrounding page scrolls instead.
-    // Widgets that manage their own fixed-viewport layout (autoHeight: false
-    // in projects.json -- e.g. the secagg sandbox) opt out, since measuring
-    // their content height doesn't mean anything for a self-contained app.
-    if (block.autoHeight !== false) {
-      frame.addEventListener("load", () => {
-        try {
-          const doc = frame.contentDocument;
-          const resize = () => { frame.style.height = `${doc.documentElement.scrollHeight}px`; };
-          resize();
-          new ResizeObserver(resize).observe(doc.documentElement);
-        } catch { /* cross-origin fallback: keep the fixed height */ }
-      });
-    }
+    frame.scrolling = "no";
+    // Same-origin widget pages: keep the frame exactly as tall as its content
+    // (growing and shrinking) so it never needs an internal scrollbar -- the
+    // surrounding page scrolls instead. A widget that is a fixed-viewport app
+    // sets "fixedHeightFrom": N in projects.json: it keeps its fixed height
+    // when the frame is at least N px wide, and is content-sized below that
+    // (where its layout stacks vertically).
+    frame.addEventListener("load", () => {
+      try {
+        const doc = frame.contentDocument;
+        doc.documentElement.style.overflow = "hidden";
+        const fit = () => {
+          const fixed = block.fixedHeightFrom && frame.clientWidth >= block.fixedHeightFrom;
+          const h = fixed ? (block.height || 600) : contentHeight(doc);
+          if (h && frame.offsetHeight !== h) frame.style.height = `${h}px`;
+        };
+        fit();
+        const ro = new ResizeObserver(fit);
+        ro.observe(doc.body);
+        ro.observe(frame);
+      } catch { /* cross-origin fallback: keep the fixed height */ }
+    });
     wrap.appendChild(frame);
     if (block.caption) {
       const cap = document.createElement("p");
