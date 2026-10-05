@@ -11,11 +11,12 @@
 
 * { box-sizing: border-box; }
 
-html, body {
+html {
   height: 100%;
 }
 
 body {
+  min-height: 100%;
   margin: 0;
   font-family: Georgia, Cambria, "Times New Roman", Times, serif;
   color: var(--ink);
@@ -49,9 +50,13 @@ a:visited { color: var(--accent-visited); }
 /* ---- Header ---- */
 
 .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
   max-width: 1600px;
   margin: 0 auto;
-  padding: 20px 32px 0;
+  padding: 12px 32px 0;
+  background: var(--bg);
 }
 
 .about-block {
@@ -269,7 +274,7 @@ body.project-reading #content {
 .pdf-toolbar {
   flex: 0 0 auto;
   position: sticky;
-  top: 0;
+  top: var(--header-h, 60px);
   z-index: 1;
   display: flex;
   align-items: center;
@@ -716,8 +721,8 @@ body.modal-open {
   flex-direction: column;
   gap: 2px;
   position: sticky;
-  top: 16px;
-  max-height: calc(100vh - 32px);
+  top: calc(var(--header-h, 60px) + 16px);
+  max-height: calc(100vh - var(--header-h, 60px) - 32px);
   overflow-y: auto;
   padding-right: 18px;
   border-right: 1px solid var(--border);
@@ -785,7 +790,7 @@ body.modal-open {
   display: flex;
   align-items: baseline;
   gap: 16px;
-  scroll-margin-top: 20px;
+  scroll-margin-top: calc(var(--header-h, 60px) + 20px);
 }
 
 .project-chapter-number {

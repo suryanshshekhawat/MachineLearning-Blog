@@ -2,6 +2,16 @@ const SECTIONS = ["articles", "projects", "notes", "publications", "about"];
 const DEFAULT_SECTION = "articles";
 const IFRAME_ASSET_VERSION = "6";
 
+// The top nav is sticky; keep its measured height in a CSS variable so other
+// sticky elements and scroll offsets can sit just below it.
+const siteHeaderEl = document.querySelector(".site-header");
+function headerHeight() { return siteHeaderEl ? siteHeaderEl.offsetHeight : 0; }
+function syncHeaderHeight() {
+  document.documentElement.style.setProperty("--header-h", `${headerHeight()}px`);
+}
+syncHeaderHeight();
+if (siteHeaderEl) new ResizeObserver(syncHeaderHeight).observe(siteHeaderEl);
+
 // True content height of a same-origin widget document: the bottom of its
 // last visible element. documentElement.scrollHeight can't be used because it
 // never reports less than the frame's current height, so frames couldn't shrink.
@@ -127,7 +137,7 @@ function createPdfControls(bodyEl) {
     if (!canvases.length) { pageCurrentEl.textContent = "–"; return; }
     // A fixed viewport offset (not tied to bodyEl's own position, which drifts
     // as the surrounding page scrolls) marking "the page currently being read".
-    const marker = 100;
+    const marker = headerHeight() + 60;
     let current = canvases[0];
     canvases.forEach(c => { if (c.getBoundingClientRect().top <= marker) current = c; });
     pageCurrentEl.textContent = current.dataset.pageNum;
@@ -764,7 +774,7 @@ function teardownScrollSpy() {
 
 function updateActiveChapter() {
   if (!activeChapterEls.length) return;
-  const threshold = 30;
+  const threshold = headerHeight() + 30;
   let current = activeChapterEls[0];
   for (const entry of activeChapterEls) {
     if (entry.el.getBoundingClientRect().top - threshold <= 0) {
