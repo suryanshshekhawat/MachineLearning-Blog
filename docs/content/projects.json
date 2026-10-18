@@ -103,7 +103,9 @@
 
       {"type": "text", "html": "<p>All errors are macro-averaged RMSE in normalised power units, and the inputs include pitch and rotor speed, so they are not comparable with weather-based forecasting errors. This is one model architecture on one benchmark.</p>"},
 
-      {"type": "text", "html": "<p>Still open: my supervisor's sign-off on the scope (a semi-honest protocol plus one attack demonstration) and on the wording of the questions; stronger attacks; and one dataset caveat, because the Farm A status labels changed between dataset releases. I treat that as a sensitivity analysis, and only plain federated averaging at 3 clients depends on it. The thesis text itself has not been started.</p>"},
+      {"type": "text", "html": "<p>Still open: my supervisor's sign-off on the scope (a semi-honest protocol plus one attack demonstration) and on the wording of the questions; stronger attacks; and one dataset caveat, because the Farm A status labels changed between dataset releases. I treat that as a sensitivity analysis, and only plain federated averaging at 3 clients depends on it. A draft of the thesis exists, written only to gauge how long each section will be; the thesis text itself is still to be written.</p>"},
+
+      { "type": "text", "html": "<p><strong>Code and data.</strong> The code, every result file and the figures are in the <a href=\"https://github.com/mint-research/26-Suryansh\" target=\"_blank\" rel=\"noopener\">project repository</a>. It does not include the CARE data: download version 6 from <a href=\"https://zenodo.org/records/15846963\" target=\"_blank\" rel=\"noopener\">Zenodo (record 15846963)</a>; the repository README gives the checksum and the steps to rerun everything.</p>"},
 
       { "type": "collapsible-pdf", "label": "Read the full literature review (36 pages)", "src": "downloads/thesis-literature-review.pdf" }
     ]
