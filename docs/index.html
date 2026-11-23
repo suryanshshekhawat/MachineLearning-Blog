@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Suryansh Singh Shekhawat</title>
-<link rel="stylesheet" href="css/style.css?v=views1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=modern1">
 </head>
 <body>
 
@@ -12,6 +15,7 @@
 
 <header class="site-header">
   <nav class="site-nav">
+    <a class="brand" href="#about"><span class="brand-mark" aria-hidden="true"></span>Suryansh Shekhawat</a>
     <button class="nav-link" data-section="articles">Articles</button>
     <button class="nav-link" data-section="projects">Projects</button>
     <button class="nav-link" data-section="notes">Notes</button>
@@ -26,6 +30,7 @@
     <div class="about-block">
       <img class="profile-photo" src="img/profile.jpg" alt="Suryansh Singh Shekhawat" id="profile-photo">
       <div>
+        <p class="eyebrow">About</p>
         <h1 class="site-name">Suryansh Singh Shekhawat</h1>
         <p class="site-tagline">I like ML and here is some of what I am upto</p>
       </div>
@@ -33,6 +38,10 @@
   </section>
 
   <section id="articles" class="panel">
+    <header class="panel-head">
+      <p class="eyebrow">Writing</p>
+      <h1 class="panel-title">Articles</h1>
+    </header>
     <div id="articles-list" class="notes-list"></div>
 
     <div id="article-detail" class="notes-detail" hidden>
@@ -45,6 +54,10 @@
   </section>
 
   <section id="projects" class="panel">
+    <header class="panel-head">
+      <p class="eyebrow">Work</p>
+      <h1 class="panel-title">Projects</h1>
+    </header>
     <div id="projects-list" class="notes-list"></div>
 
     <div id="project-detail" class="notes-detail" hidden>
@@ -60,6 +73,10 @@
   </section>
 
   <section id="notes" class="panel">
+    <header class="panel-head">
+      <p class="eyebrow">Study</p>
+      <h1 class="panel-title">Notes</h1>
+    </header>
     <div id="notes-list" class="notes-list"></div>
 
     <div id="notes-detail" class="notes-detail" hidden>
@@ -72,6 +89,10 @@
   </section>
 
   <section id="publications" class="panel">
+    <header class="panel-head">
+      <p class="eyebrow">Research</p>
+      <h1 class="panel-title">Publications</h1>
+    </header>
     <ul class="entry-list">
       <li class="entry-placeholder">No publications listed yet — check back soon.</li>
     </ul>
@@ -82,7 +103,7 @@
 <div id="view-counter" class="view-counter" role="status" title="Visits (a new tab or session counts once) and unique browsers (counted once per browser). No personal data is stored; counts are kept by a third-party counter service." hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="js/app.js?v=sbx7"></script>
+<script src="js/app.js?v=modern1"></script>
 <script src="js/views.js?v=1"></script>
 </body>
 </html>

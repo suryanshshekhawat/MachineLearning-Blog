@@ -27,6 +27,26 @@ function contentHeight(doc) {
   return Math.ceil(bottom + parseFloat(cs.paddingBottom || 0) + parseFloat(cs.marginBottom || 0));
 }
 
+// Shared row markup for the Articles / Notes / Projects lists.
+function formatDate(d) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d || "")) return d || "";
+  const [y, m, day] = d.split("-").map(Number);
+  return new Date(y, m - 1, day).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function listRow(item, i, attr) {
+  return `
+    <button class="note-item" ${attr}="${item.id}">
+      <span class="note-item-index">${String(i + 1).padStart(2, "0")}</span>
+      <span class="note-item-body">
+        <span class="note-item-title">${item.title}</span>
+        <span class="note-item-summary">${item.summary}</span>
+      </span>
+      <span class="note-item-meta">${formatDate(item.date)}</span>
+      <span class="note-item-arrow" aria-hidden="true">&rarr;</span>
+    </button>`;
+}
+
 const navLinks = document.querySelectorAll(".nav-link");
 const panels = {};
 SECTIONS.forEach(id => { panels[id] = document.getElementById(id); });
@@ -504,13 +524,7 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
   }
 
   function renderList(items) {
-    listEl.innerHTML = items.map(item => `
-      <button class="note-item" data-item-id="${item.id}">
-        <p class="note-item-title">${item.title}</p>
-        <p class="note-item-meta">${item.date}</p>
-        <p class="note-item-summary">${item.summary}</p>
-      </button>
-    `).join("");
+    listEl.innerHTML = items.map((item, i) => listRow(item, i, "data-item-id")).join("");
 
     listEl.querySelectorAll(".note-item").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -603,13 +617,7 @@ async function loadProjectsIndex() {
 }
 
 function renderProjectsList(projects) {
-  projectsListEl.innerHTML = projects.map(project => `
-    <button class="note-item" data-project-id="${project.id}">
-      <p class="note-item-title">${project.title}</p>
-      <p class="note-item-meta">${project.date}</p>
-      <p class="note-item-summary">${project.summary}</p>
-    </button>
-  `).join("");
+  projectsListEl.innerHTML = projects.map((p, i) => listRow(p, i, "data-project-id")).join("");
 
   projectsListEl.querySelectorAll(".note-item").forEach(btn => {
     btn.addEventListener("click", () => {
