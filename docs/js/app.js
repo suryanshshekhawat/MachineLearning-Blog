@@ -70,8 +70,9 @@ function countLabel(n, plural) {
   return `${n} ${n === 1 ? plural.slice(0, -1) : plural}`;
 }
 
-// The little animated pixel tile next to the name in the header.
-if (siteHeaderEl && window.Thumbs) Thumbs.mount(siteHeaderEl);
+// Animated Mach-wave pixel field behind the header.
+const navBgEl = document.getElementById("nav-bg");
+if (navBgEl && siteHeaderEl && window.Thumbs) Thumbs.banner(navBgEl, siteHeaderEl);
 
 const navLinks = document.querySelectorAll(".nav-link");
 const panels = {};
@@ -556,6 +557,38 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
   const countEl = document.getElementById(`${kind}-count`);
   let activeTopic = "all";
 
+  // Optional List / Graph switch (Notes only for now). The graph shows how
+  // the visible items build on each other (js/notes-graph.js).
+  const panelEl = listEl.closest(".panel");
+  const viewEl = document.getElementById(`${kind}-view`);
+  const graphEl = document.getElementById(`${kind}-graph`);
+  let view = "list";
+  try { if (localStorage.getItem(`${kind}:view`) === "graph") view = "graph"; } catch { /* storage blocked */ }
+  let lastRender = null;
+
+  function setView(next) {
+    view = next;
+    try { localStorage.setItem(`${kind}:view`, next); } catch { /* storage blocked */ }
+    syncView();
+    if (lastRender) renderGraph(...lastRender);
+  }
+
+  function syncView() {
+    if (!viewEl || !graphEl) return;
+    panelEl.classList.toggle("view-graph", view === "graph");
+    viewEl.querySelectorAll("button[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+  }
+
+  function renderGraph(items, allItems) {
+    if (!graphEl || view !== "graph" || !window.NotesGraph) return;
+    NotesGraph.render(graphEl, items, allItems, id => { location.hash = `#${kind}/${id}`; });
+  }
+
+  if (viewEl && graphEl) {
+    viewEl.querySelectorAll("button[data-view]").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
+    syncView();
+  }
+
   function renderChips(items) {
     if (!chipsEl) return;
     const counts = new Map();
@@ -600,6 +633,9 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
         location.hash = `#${kind}/${btn.dataset.itemId}`;
       });
     });
+
+    lastRender = [items, allItems];
+    renderGraph(items, allItems);
   }
 
   async function showItem(id) {

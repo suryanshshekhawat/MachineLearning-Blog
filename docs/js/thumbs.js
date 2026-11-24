@@ -337,20 +337,23 @@
     const name = SCENES[canvas.dataset.anim] ? canvas.dataset.anim : GENERIC[hash(key) % GENERIC.length];
     const rand = rng(hash(`${key}:${name}`));
     const ctx = canvas.getContext("2d");
-    return { canvas, ctx, img: ctx.createImageData(N, N), scene: SCENES[name](rand), t0: rand() * 20 };
+    return { canvas, ctx, w: N, h: N, palette: PALETTE, img: ctx.createImageData(N, N), scene: SCENES[name](rand), t0: rand() * 20 };
   }
 
+  // Coordinates are in units of the tile's height: y runs 0..1 and x runs
+  // 0..1 on square tiles, 0..width/height on the wide banner.
   function draw(tile, now) {
     const field = tile.scene(tile.t0 + now / 1000);
+    const { w, h, palette } = tile;
     const d = tile.img.data;
     let o = 0;
-    for (let py = 0; py < N; py++) {
-      const y = (py + 0.5) / N;
-      for (let px = 0; px < N; px++, o += 4) {
-        const v = field((px + 0.5) / N, y);
+    for (let py = 0; py < h; py++) {
+      const y = (py + 0.5) / h;
+      for (let px = 0; px < w; px++, o += 4) {
+        const v = field((px + 0.5) / h, y);
         let lvl = Math.floor((v > 1 ? 1 : v < 0 ? 0 : v) * 3 + BAYER[((py & 3) << 2) | (px & 3)]);
         if (lvl > 3) lvl = 3;
-        const c = PALETTE[lvl];
+        const c = palette[lvl];
         d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
       }
     }
@@ -400,5 +403,67 @@
     return `<span class="note-item-thumb" aria-hidden="true">${inner}</span>`;
   }
 
-  window.Thumbs = { html, mount, scenes: Object.keys(SCENES) };
+  // ---- header banner ----
+
+  // A wide Mach-wave field: a few sources at different heights and speeds
+  // sweep across, each trailing a cone of wavefronts, over a faint shimmer.
+  // Brightness is capped so white text on top stays readable.
+  function machBanner(aspect, rand) {
+    const count = Math.max(2, Math.round(aspect / 7));
+    const sources = Array.from({ length: count }, () => ({ y: 0.2 + rand() * 0.6, v: 0.9 + rand() * 0.7, phase: rand() }));
+    const c = 0.38, dt = 0.12, K = 22, span = aspect + 2, reach = K * dt * c + 0.2;
+    return t => {
+      const waves = [], heads = [];
+      const base = Math.floor(t / dt) * dt;
+      for (const s of sources) {
+        const period = span / s.v;
+        for (let k = 0; k < K; k++) {
+          const te = base - k * dt;
+          waves.push(-1 + frac(te / period + s.phase) * span, s.y, (t - te) * c, 1 - k / K);
+        }
+        heads.push(-1 + frac(t / period + s.phase) * span, s.y);
+      }
+      return (x, y) => {
+        let I = 0.2 + 0.09 * Math.sin(x * 0.9 + t * 0.35) * Math.sin(y * 3.2 - t * 0.25 + x * 0.3);
+        for (let i = 0; i < waves.length; i += 4) {
+          const dx = x - waves[i];
+          if (dx > reach || dx < -reach) continue;
+          const d = Math.hypot(dx, y - waves[i + 1]) - waves[i + 2];
+          I += 0.42 * waves[i + 3] * Math.exp(-(d * d) / 0.006);
+        }
+        for (let i = 0; i < heads.length; i += 2) I += 0.5 * blob(x, y, heads[i], heads[i + 1], 0.12);
+        // Capped below the brightest palette level, even after dithering.
+        return I > 0.64 ? 0.64 : I;
+      };
+    };
+  }
+
+  const BANNER_PX = 6; // CSS pixels per banner pixel
+
+  // Fill `canvas` with the banner, sized to cover `host` and re-sized with it.
+  function banner(canvas, host) {
+    const ctx = canvas.getContext("2d");
+    const rand = rng(hash("banner"));
+    const tile = { canvas, ctx, palette: PALETTE, t0: rand() * 20, w: 0, h: 0 };
+    canvas._thumb = tile;
+    function fit() {
+      const w = Math.max(1, Math.ceil(host.clientWidth / BANNER_PX));
+      const h = Math.max(1, Math.ceil(host.clientHeight / BANNER_PX));
+      if (w === tile.w && h === tile.h) return;
+      tile.w = canvas.width = w;
+      tile.h = canvas.height = h;
+      canvas.style.width = `${w * BANNER_PX}px`;
+      canvas.style.height = `${h * BANNER_PX}px`;
+      tile.img = ctx.createImageData(w, h);
+      tile.scene = machBanner(w / h, rng(hash("banner")));
+      draw(tile, performance.now());
+    }
+    fit();
+    if ("ResizeObserver" in window) new ResizeObserver(fit).observe(host);
+    if (reduceMotion) return;
+    if (io) io.observe(canvas);
+    else { visible.add(tile); kick(); }
+  }
+
+  window.Thumbs = { html, mount, banner, scenes: Object.keys(SCENES) };
 })();
