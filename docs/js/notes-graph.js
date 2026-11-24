@@ -16,18 +16,14 @@
   const GAP_Y = 40;
   const GAP_X = 14;
   const MAX_NODE_W = 196;
+  const MIN_NODE_W = 150;   // levels wider than this wrap onto extra rows
+  const GROUP_HEAD = 34;    // height of a branch heading
+  const GROUP_GAP = 30;     // space between branches
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  function formatDate(d) {
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || "");
-    return m ? `${m[3]}.${m[2]}.${m[1]}` : (d || "");
-  }
-
-  function split(item) {
-    const m = /^([^:]{1,12}):\s*(.+)$/.exec(item.title);
-    return m ? { label: m[1], title: m[2] } : { label: "", title: item.title };
-  }
+  // Label, date and status helpers are shared with the timeline.
+  const { split, formatDate, statusHtml } = window.Timeline;
 
   // Visible edges: [from, to, direct?]. A parent hidden by the filter is
   // replaced by its nearest visible ancestors.
@@ -74,10 +70,15 @@
     return out;
   }
 
-  function render(container, items, allItems, onOpen) {
+  function render(container, items, allItems, onOpen, emptyText = "Nothing here yet.") {
     // Keep the selection across re-renders (filter changes, resizes).
     const prevSelected = container._graph && container._graph.selected;
     if (container._graphRO) container._graphRO.disconnect();
+    if (!items.length) {
+      container._graph = null;
+      container.innerHTML = `<p class="list-empty">${emptyText}</p>`;
+      return;
+    }
 
     const byId = new Map(allItems.map(it => [it.id, it]));
     const edges = buildEdges(items, byId);
@@ -96,25 +97,52 @@
     const state = { selected: items.some(it => it.id === prevSelected) ? prevSelected : null, hovered: null, boxes: new Map() };
     container._graph = state;
 
+    // Each branch (an item's first topic) gets its own block with a heading;
+    // inside it, notes sit in levels, and a level wider than the canvas wraps
+    // onto extra rows.
+    const groups = [];
+    items.forEach(it => {
+      const name = (it.topics || [])[0] || "";
+      let g = groups.find(x => x.name === name);
+      if (!g) groups.push(g = { name, items: [] });
+      g.items.push(it);
+    });
+
     function layout() {
       const W = canvas.clientWidth;
       if (!W) return;
-      const rows = [];
-      items.forEach(it => { const l = layers.get(it.id); (rows[l] = rows[l] || []).push(it); });
+      const perRow = Math.max(1, Math.floor((W + GAP_X) / (MIN_NODE_W + GAP_X)));
       state.boxes = new Map();
-      rows.forEach((row, l) => {
-        const n = row.length;
-        const w = Math.min(MAX_NODE_W, (W - GAP_X * (n - 1)) / n);
-        const total = w * n + GAP_X * (n - 1);
-        row.forEach((it, i) => state.boxes.set(it.id, { x: Math.round((W - total) / 2 + i * (w + GAP_X)), y: l * (NODE_H + GAP_Y), w: Math.round(w), layer: l }));
+      const heads = [];
+      let y = 0, row = 0;
+      groups.forEach((g, gi) => {
+        if (gi) y += GROUP_GAP;
+        const done = g.items.filter(it => it.status === "complete").length;
+        const withStatus = g.items.filter(it => it.status).length;
+        heads.push(`<div class="graph-group" style="top:${y}px">${esc(g.name || "Other")}<span>${g.items.length} ${g.items.length === 1 ? "note" : "notes"}${withStatus ? ` &middot; ${done} complete` : ""}</span></div>`);
+        y += GROUP_HEAD;
+        const levels = [...new Set(g.items.map(it => layers.get(it.id)))].sort((a, b) => a - b);
+        levels.forEach(l => {
+          const level = g.items.filter(it => layers.get(it.id) === l);
+          for (let i = 0; i < level.length; i += perRow) {
+            const chunk = level.slice(i, i + perRow);
+            const n = chunk.length;
+            const w = Math.min(MAX_NODE_W, (W - GAP_X * (n - 1)) / n);
+            const total = w * n + GAP_X * (n - 1);
+            chunk.forEach((it, j) => state.boxes.set(it.id, { x: Math.round((W - total) / 2 + j * (w + GAP_X)), y, w: Math.round(w), row }));
+            y += NODE_H + GAP_Y;
+            row++;
+          }
+        });
+        y -= GAP_Y;
       });
-      const H = rows.length * (NODE_H + GAP_Y) - GAP_Y;
+      const H = y;
 
       const paths = edges.map(([from, to, direct]) => {
         const a = state.boxes.get(from), b = state.boxes.get(to);
         const x1 = a.x + a.w / 2, y1 = a.y + NODE_H, x2 = b.x + b.w / 2, y2 = b.y - 6;
         let d;
-        if (b.layer - a.layer > 1) {
+        if (b.row - a.row > 1) {
           // Skips a level: swing out to the right so it doesn't run behind
           // the nodes in between.
           const cx = Math.min(W - 4, Math.max(a.x + a.w, b.x + b.w) + 30);
@@ -139,14 +167,18 @@
           </defs>
           ${paths}
         </svg>
+        ${heads.join("")}
         ${items.map(it => {
           const box = state.boxes.get(it.id);
           const { label, title } = split(it);
+          const status = it.status ? `<span class="graph-status ${esc(it.status)}" aria-hidden="true"></span>` : "";
           return `
-            <button type="button" class="graph-node" data-id="${esc(it.id)}" aria-label="${esc(it.title)}"
+            <button type="button" class="graph-node${it.status ? ` is-${esc(it.status)}` : ""}" data-id="${esc(it.id)}"
+              aria-label="${esc(it.title)}${it.status ? ` (${esc(it.status)})` : ""}"
               style="left:${box.x}px;top:${box.y}px;width:${box.w}px;height:${NODE_H}px">
               ${Thumbs.html(it)}
               <span class="graph-node-text">${label ? `<b>${esc(label)}</b>` : ""}<span>${esc(title)}</span></span>
+              ${status}
             </button>`;
         }).join("")}`;
       Thumbs.mount(canvas);
@@ -200,11 +232,13 @@
       }
       const it = byId.get(id);
       const { label, title } = split(it);
+      const date = formatDate(it.date);
       const before = parents.get(id) || [];
       const after = children.get(id) || [];
       panel.innerHTML = `
-        <p class="gp-kicker">${label ? `${esc(label)} &middot; ` : ""}${esc(formatDate(it.date))}</p>
+        <p class="gp-kicker">${esc(label)}${date && date !== label ? ` &middot; ${esc(date)}` : ""}</p>
         <h3 class="gp-title">${esc(title)}</h3>
+        ${it.status ? `<div>${statusHtml(it.status)}</div>` : ""}
         ${(it.topics || []).length ? `<div class="gp-topics">${it.topics.map(t => `<span>${esc(t)}</span>`).join("")}</div>` : ""}
         <p class="gp-summary">${it.summary}</p>
         <div class="gp-links"><span class="gp-links-label">Builds on</span>${before.length ? before.map(chip).join("") : `<span class="gp-none">a starting point</span>`}</div>
@@ -262,8 +296,8 @@
       if (e.key === "ArrowUp") next = nearest(parents.get(id) || [], id);
       else if (e.key === "ArrowDown") next = nearest(children.get(id) || [], id);
       else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        const layer = state.boxes.get(id).layer;
-        const row = items.map(it => it.id).filter(x => state.boxes.get(x).layer === layer)
+        const r = state.boxes.get(id).row;
+        const row = items.map(it => it.id).filter(x => state.boxes.get(x).row === r)
           .sort((a, b) => state.boxes.get(a).x - state.boxes.get(b).x);
         next = row[row.indexOf(id) + (e.key === "ArrowLeft" ? -1 : 1)] || null;
       } else if (e.key === "Escape") { select(null); node.blur(); return; }

@@ -24,21 +24,37 @@
     return m ? `${m[3]}.${m[2]}.${m[1]}` : (d || "");
   }
 
-  // A short prefix such as "ML 1: ..." becomes the node's label; otherwise
-  // the label is the date.
+  // The node's label: an explicit "label" field, else a short title prefix
+  // such as "ML 1: ...", else the date.
   function split(item) {
     const m = /^([^:]{1,12}):\s*(.+)$/.exec(item.title);
+    if (item.label) return { label: item.label, title: m ? m[2] : item.title };
     return m ? { label: m[1], title: m[2] } : { label: formatDate(item.date), title: item.title };
+  }
+
+  // "complete" / "incomplete" badge from an item's optional "status" field.
+  const STATUS = {
+    complete: { text: "Complete", icon: '<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2.5 6.2 5 8.6 9.6 3.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>' },
+    incomplete: { text: "Incomplete", icon: '<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><circle cx="6" cy="6" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 1.8a4.2 4.2 0 0 1 0 8.4z" fill="currentColor"/></svg>' },
+  };
+  function statusHtml(status, extra = "") {
+    const s = STATUS[status];
+    return s ? `<span class="status-tag ${status}${extra}">${s.icon}${s.text}</span>` : "";
   }
 
   // Each entry shows just its label, tile and title; the date, summary and
   // topics appear in a card on hover or keyboard focus.
-  function itemHtml(item) {
+  function itemHtml(item, withStatus) {
     const { label, title } = split(item);
     const popId = `tl-pop-${esc(item.id)}`;
     const topics = (item.topics || []).map(t => `<span>${esc(t)}</span>`).join("");
+    const date = formatDate(item.date);
+    // Every entry gets a status slot when any entry has one, so the nodes
+    // stay on one line.
+    const status = withStatus ? (statusHtml(item.status) || '<span class="status-tag none" aria-hidden="true">&nbsp;</span>') : "";
     return `
-      <div class="tl-item">
+      <div class="tl-item${item.status ? ` is-${esc(item.status)}` : ""}">
+        ${status}
         <span class="tl-node" aria-hidden="true"></span>
         <span class="tl-label">${esc(label)}</span>
         <button type="button" class="tl-card" data-id="${esc(item.id)}" aria-describedby="${popId}">
@@ -46,7 +62,7 @@
           <span class="tl-title">${title}</span>
         </button>
         <div class="tl-pop" id="${popId}" role="tooltip">
-          <span class="tl-pop-meta">${esc(label)} &middot; ${esc(formatDate(item.date))}</span>
+          <span class="tl-pop-meta">${esc(label)}${date && date !== label ? ` &middot; ${esc(date)}` : ""}${item.status ? ` &middot; ${STATUS[item.status] ? STATUS[item.status].text : esc(item.status)}` : ""}</span>
           <span class="tl-pop-title">${title}</span>
           <span class="tl-pop-summary">${item.summary}</span>
           ${topics ? `<span class="tl-pop-topics">${topics}</span>` : ""}
@@ -116,14 +132,22 @@
   }
 
   function layout(el) {
+    if (!el.querySelector(".tl-item")) return;
     const n = place(el);
     if (n) drawLine(el, n);
   }
 
   // Render `items` into `el` as a timeline; onOpen(id) runs when one is clicked.
-  function render(el, items, onOpen) {
+  function render(el, items, onOpen, emptyText = "Nothing here yet.") {
     el.classList.add("timeline");
-    el.innerHTML = `<svg class="tl-line" aria-hidden="true"></svg>${items.map(itemHtml).join("")}`;
+    if (!items.length) {
+      el.classList.remove("tl-vertical");
+      el.style.gridTemplateColumns = "";
+      el.innerHTML = `<p class="list-empty">${emptyText}</p>`;
+      return;
+    }
+    const withStatus = items.some(it => it.status);
+    el.innerHTML = `<svg class="tl-line" aria-hidden="true"></svg>${items.map(it => itemHtml(it, withStatus)).join("")}`;
     Thumbs.mount(el);
     el.querySelectorAll(".tl-card").forEach(btn => btn.addEventListener("click", () => onOpen(btn.dataset.id)));
     layout(el);
@@ -135,5 +159,5 @@
     }
   }
 
-  window.Timeline = { render };
+  window.Timeline = { render, split, formatDate, statusHtml };
 })();

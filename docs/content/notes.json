@@ -2,6 +2,7 @@
   {
     "id": "ml-notes-linear-regression",
     "anim": "descent",
+    "status": "complete",
     "topics": ["Machine Learning", "Supervised Learning"],
     "title": "ML 1: Regression, Gradient Descent and Classification",
     "date": "2026-08-28",
@@ -12,6 +13,7 @@
   {
     "id": "ml-notes-ml2",
     "anim": "network",
+    "status": "complete",
     "topics": ["Machine Learning", "Supervised Learning", "Deep Learning"],
     "buildsOn": ["ml-notes-linear-regression"],
     "title": "ML 2: Neural Networks, Multiclass Classification and Model Diagnostics",
@@ -23,6 +25,7 @@
   {
     "id": "ml-notes-ml3",
     "anim": "clusters",
+    "status": "complete",
     "topics": ["Machine Learning", "Unsupervised Learning"],
     "buildsOn": ["ml-notes-linear-regression"],
     "title": "ML 3: Clustering, Anomaly Detection and Recommender Systems",
@@ -34,6 +37,7 @@
   {
     "id": "ml-notes-ml4",
     "anim": "wave",
+    "status": "complete",
     "topics": ["Machine Learning", "Deep Learning", "Sequence Models"],
     "buildsOn": ["ml-notes-ml2"],
     "title": "ML 4: Sequence Models and Recurrent Neural Networks",
@@ -45,6 +49,7 @@
   {
     "id": "ml-notes-ml5",
     "anim": "embed",
+    "status": "complete",
     "topics": ["Machine Learning", "Deep Learning", "NLP"],
     "buildsOn": ["ml-notes-ml4"],
     "title": "ML 5: Word Representation, Embeddings and Sentiment Classification",
@@ -56,6 +61,7 @@
   {
     "id": "ml-notes-ml6",
     "anim": "attention",
+    "status": "complete",
     "topics": ["Machine Learning", "Deep Learning", "Sequence Models", "NLP"],
     "buildsOn": ["ml-notes-ml4", "ml-notes-ml5"],
     "title": "ML 6: Sequence-to-Sequence Models, Beam Search and Attention",
@@ -67,6 +73,7 @@
   {
     "id": "ml-notes-ml7",
     "anim": "transformer",
+    "status": "complete",
     "topics": ["Machine Learning", "Deep Learning", "NLP"],
     "buildsOn": ["ml-notes-ml6"],
     "title": "ML 7: Transformer Networks",
@@ -74,5 +81,58 @@
     "summary": "Motivation for moving beyond recurrence, self-attention, multi-head attention, and the Transformer architecture.",
     "pdf": "downloads/ml-notes-ml7.pdf",
     "zip": "downloads/ml-notes-ml7-latex.zip"
+  },
+  {
+    "id": "number-theory-intro",
+    "label": "NT Intro",
+    "anim": "modular",
+    "status": "complete",
+    "topics": ["Mathematics", "Number Theory", "Modular Arithmetic"],
+    "title": "Number Theory Introduction",
+    "summary": "Number sets, parity, Pythagorean triples, divisibility rules, primes and the Sieve of Eratosthenes, GCD/LCM and the Euclidean algorithm, divisor counting, linear Diophantine equations and modular arithmetic.",
+    "pdf": "downloads/notes-number-theory-intro.pdf"
+  },
+  {
+    "id": "fibonacci-numbers",
+    "label": "Fibonacci",
+    "anim": "fibonacci",
+    "status": "incomplete",
+    "topics": ["Mathematics", "Sequences", "Number Theory"],
+    "buildsOn": ["number-theory-intro"],
+    "title": "Notes on Fibonacci Numbers",
+    "summary": "The Fibonacci sequence and its identities: sums of terms, odd and even terms and squares, the addition formula by induction, divisibility, and formulas for multiples.",
+    "pdf": "downloads/notes-fibonacci-numbers.pdf"
+  },
+  {
+    "id": "experimental-number-theory",
+    "label": "NT Lab",
+    "anim": "gcd",
+    "status": "incomplete",
+    "topics": ["Mathematics", "Number Theory", "Experimental"],
+    "buildsOn": ["number-theory-intro", "fibonacci-numbers"],
+    "title": "My Experimental Introduction to Number Theory",
+    "date": "January 2025",
+    "summary": "Divisors and divisor counts, the division algorithm, GCD with the Euclidean and extended Euclidean algorithms, Lamé's theorem, unique factorisation, the Sieve of Eratosthenes and the Prime Number Theorem.",
+    "pdf": "downloads/notes-experimental-number-theory.pdf"
+  },
+  {
+    "id": "set-theory-counting",
+    "label": "Counting",
+    "anim": "pascal",
+    "status": "incomplete",
+    "topics": ["Mathematics", "Combinatorics", "Set Theory"],
+    "title": "Notes on Set Theory and Counting",
+    "summary": "Tower of Hanoi, sets and cardinality, set operations, relations and functions, counting principles, permutations, binomial and multinomial coefficients, Pascal's triangle, inclusion–exclusion, derangements and Stirling numbers.",
+    "pdf": "downloads/notes-set-theory-counting.pdf"
+  },
+  {
+    "id": "complex-numbers",
+    "label": "Complex",
+    "anim": "roots",
+    "status": "complete",
+    "topics": ["Mathematics", "Algebra"],
+    "title": "Notes on Complex Numbers",
+    "summary": "The imaginary unit, Cartesian arithmetic and conjugates, the Argand plane, modulus, polar and exponential forms, Euler's formula, De Moivre's theorem, nth roots and conjugate-pair roots of polynomials.",
+    "pdf": "downloads/notes-complex-numbers.pdf"
   }
 ]

@@ -316,6 +316,208 @@
         };
       };
     },
+
+    // Clock arithmetic: on a 12-hour clock, keep adding k (mod 12). The path
+    // traces a star polygon, which closes after 12/gcd(k, 12) steps.
+    modular(rand) {
+      const n = 12, r = 0.38, ks = [5, 7, 3, 4, 1];
+      const P = Array.from({ length: n }, (_, i) => {
+        const a = (i / n) * 2 * Math.PI - Math.PI / 2;
+        return [0.5 + r * Math.cos(a), 0.5 + r * Math.sin(a)];
+      });
+      const off = Math.floor(rand() * ks.length);
+      return t => {
+        const cycle = Math.floor(t / 7), k = ks[(cycle + off) % ks.length];
+        const steps = Math.min(n, Math.floor((t % 7) / 0.45));
+        const path = [];
+        let p = 0;
+        for (let s = 0; s < steps; s++) { const q = (p + k) % n; path.push([p, q, s === steps - 1]); p = q; }
+        return (x, y) => {
+          let I = 0.22 * Math.exp(-((Math.hypot(x - 0.5, y - 0.5) - r) ** 2) / 0.0004);
+          for (const [a, b, last] of path) I = Math.max(I, (last ? 1 : 0.55) * line(x, y, P[a][0], P[a][1], P[b][0], P[b][1], 0.02));
+          for (let i = 0; i < n; i++) I = Math.max(I, (i === p ? 1 : 0.5) * blob(x, y, P[i][0], P[i][1], i === p ? 0.05 : 0.03));
+          return I;
+        };
+      };
+    },
+
+    // Euclid's algorithm: brightness is the number of steps gcd(a, b) takes.
+    // The dark rays are pairs with a common factor; the brightest pixels sit
+    // on consecutive Fibonacci numbers.
+    gcd() {
+      const steps = new Float32Array(N * N);
+      let max = 1;
+      for (let a = 1; a <= N; a++) {
+        for (let b = 1; b <= N; b++) {
+          let x = a, y = b, k = 0;
+          while (y) { const r = x % y; x = y; y = r; k++; }
+          steps[(b - 1) * N + (a - 1)] = k;
+          if (k > max) max = k;
+        }
+      }
+      return t => {
+        const sweep = frac(t / 7) * 1.4;
+        return (x, y) => {
+          const a = Math.min(N - 1, Math.floor(x * N)), b = Math.min(N - 1, Math.floor((1 - y) * N));
+          const v = steps[b * N + a] / max;
+          const d = (x + (1 - y)) / 2;
+          const reveal = smooth((sweep - d) / 0.12);
+          return (0.12 + 0.95 * v) * reveal + 0.3 * Math.exp(-((d - sweep) ** 2) / 0.002);
+        };
+      };
+    },
+
+    // Fibonacci bars: each new bar grows to the sum of the two before it,
+    // and those two light up while it does.
+    fibonacci() {
+      const F = [1, 1, 2, 3, 5, 8, 13], bw = 0.09, gap = 0.032, x0 = 0.08;
+      return t => {
+        const s = (t / 0.8) % (F.length + 2), cur = Math.floor(s), grow = smooth(frac(s) / 0.7);
+        return (x, y) => {
+          const i = Math.floor((x - x0) / (bw + gap));
+          if (i < 0 || i >= F.length || (x - x0) - i * (bw + gap) > bw) return 0;
+          if (i > cur) return 0;
+          const h = (F[i] / F[F.length - 1]) * 0.8 * (i === cur ? grow : 1);
+          if (y < 0.9 - h || y > 0.9) return 0;
+          if (i === cur) return 1;
+          return i === cur - 1 || i === cur - 2 ? 0.75 : 0.4;
+        };
+      };
+    },
+
+    // Pascal's triangle mod 2, filled in row by row: odd entries light up and
+    // a Sierpinski triangle appears.
+    pascal() {
+      return t => {
+        const rows = frac(t / 6) * (N + 8);
+        return (x, y) => {
+          const r = Math.floor(y * N), k = Math.floor(x * N);
+          if (k > r || r > rows) return 0;
+          const odd = (k & (r - k)) === 0;
+          const fresh = r > rows - 2;
+          return odd ? (fresh ? 1 : 0.7) : (fresh ? 0.3 : 0.08);
+        };
+      };
+    },
+
+    // The n-th roots of unity spinning on the unit circle, joined as a
+    // polygon; n steps up every few seconds.
+    roots(rand) {
+      const a0 = rand() * 6.28;
+      return t => {
+        const n = 3 + (Math.floor(t / 3.2) % 6), rot = a0 + t * 0.5, r = 0.36;
+        const P = Array.from({ length: n }, (_, i) => {
+          const a = rot + (i / n) * 2 * Math.PI;
+          return [0.5 + r * Math.cos(a), 0.5 - r * Math.sin(a)];
+        });
+        return (x, y) => {
+          let I = 0.18 * Math.max(line(x, y, 0.04, 0.5, 0.96, 0.5, 0.012), line(x, y, 0.5, 0.04, 0.5, 0.96, 0.012));
+          I = Math.max(I, 0.3 * Math.exp(-((Math.hypot(x - 0.5, y - 0.5) - r) ** 2) / 0.0005));
+          for (let i = 0; i < n; i++) {
+            const [ax, ay] = P[i], [bx, by] = P[(i + 1) % n];
+            I = Math.max(I, 0.55 * line(x, y, ax, ay, bx, by, 0.016), blob(x, y, ax, ay, 0.045));
+          }
+          return I;
+        };
+      };
+    },
+
+    // Zeno / geometric series: a square halved again and again, the pieces
+    // filling in towards one corner.
+    zeno() {
+      return t => {
+        const step = (t * 1.6) % 13;
+        return (x, y) => {
+          let x0 = 0.06, y0 = 0.06, x1 = 0.94, y1 = 0.94;
+          if (x < x0 || x > x1 || y < y0 || y > y1) return 0;
+          for (let k = 0; k < 10; k++) {
+            const vertical = k % 2 === 0;
+            const mid = vertical ? (x0 + x1) / 2 : (y0 + y1) / 2;
+            const inFirst = vertical ? x < mid : y < mid;
+            if (inFirst) {
+              if (k > step) return 0.05;
+              const edge = vertical ? Math.abs(x - mid) < 0.02 : Math.abs(y - mid) < 0.02;
+              if (edge) return 0.15;
+              return k === Math.floor(step) ? 1 : (k % 2 ? 0.55 : 0.35);
+            }
+            if (vertical) x0 = mid; else y0 = mid;
+          }
+          return 0.9;
+        };
+      };
+    },
+
+    // Figurate numbers: dots added layer by layer, as triangles then squares.
+    figurate() {
+      const sp = 0.115;
+      return t => {
+        const cycle = Math.floor(t / 6) % 2, n = 1 + (Math.floor((t % 6) / 0.85) % 7);
+        const dots = [];
+        if (cycle === 0) {
+          for (let i = 0; i < n; i++) for (let j = 0; j <= i; j++) dots.push([0.5 + (j - i / 2) * sp, 0.13 + i * sp, i === n - 1]);
+        } else {
+          const o = 0.5 - ((n - 1) * sp) / 2;
+          for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) dots.push([o + j * sp, o + i * sp, i === n - 1 || j === n - 1]);
+        }
+        return (x, y) => {
+          let I = 0;
+          for (const [dx, dy, fresh] of dots) I = Math.max(I, (fresh ? 1 : 0.55) * blob(x, y, dx, dy, 0.032));
+          return I;
+        };
+      };
+    },
+
+    // A waveform morphing sine -> triangle -> square -> saw, with its
+    // harmonics as bars underneath.
+    music() {
+      const shapes = [
+        p => Math.sin(p),
+        p => (2 / Math.PI) * Math.asin(Math.sin(p)),
+        p => Math.tanh(4 * Math.sin(p)),
+        p => 2 * frac(p / (2 * Math.PI) + 0.5) - 1,
+      ];
+      const spectra = [
+        [1, 0, 0, 0, 0, 0, 0],
+        [1, 0, 1 / 9, 0, 1 / 25, 0, 1 / 49],
+        [1, 0, 1 / 3, 0, 1 / 5, 0, 1 / 7],
+        [1, 1 / 2, 1 / 3, 1 / 4, 1 / 5, 1 / 6, 1 / 7],
+      ];
+      return t => {
+        const s = (t / 2.5) % 4, i = Math.floor(s), j = (i + 1) % 4, m = smooth((frac(s) - 0.6) / 0.4);
+        const wave = p => shapes[i](p) * (1 - m) + shapes[j](p) * m;
+        const spec = spectra[i].map((v, k) => v * (1 - m) + spectra[j][k] * m);
+        return (x, y) => {
+          const wy = 0.3 - 0.17 * wave(x * 4 * Math.PI - t * 3);
+          let I = Math.exp(-((y - wy) ** 2) / 0.0012);
+          const k = Math.floor((x - 0.1) / 0.115);
+          if (k >= 0 && k < 7 && (x - 0.1) - k * 0.115 < 0.08) {
+            const h = 0.36 * Math.sqrt(spec[k]);
+            if (y > 0.92 - h && y < 0.92) I = Math.max(I, 0.45 + 0.4 * spec[k]);
+          }
+          return I;
+        };
+      };
+    },
+
+    // A generalised continued fraction as a staircase of fraction bars, each
+    // nested one shorter; a highlight steps down through the levels.
+    contfrac() {
+      const levels = 7;
+      return t => {
+        const hi = Math.floor(t * 1.8) % (levels + 2);
+        return (x, y) => {
+          let I = 0;
+          for (let i = 0; i < levels; i++) {
+            const by = 0.12 + i * 0.115, bx = 0.1 + i * 0.1;
+            const on = i === hi ? 1 : i < hi ? 0.5 : 0.25;
+            if (Math.abs(y - by) < 0.018 && x > bx + 0.08 && x < 0.94) I = Math.max(I, on);
+            I = Math.max(I, on * blob(x, y, bx + 0.03, by + 0.04, 0.03));
+            I = Math.max(I, 0.8 * on * blob(x, y, (bx + 0.08 + 0.94) / 2, by - 0.05, 0.026));
+          }
+          return I;
+        };
+      };
+    },
   };
 
   // ---- engine ----

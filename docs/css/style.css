@@ -20,6 +20,12 @@
   --btn-hover: #3f3f46;
   --thumb-bg: #120f18;
   --thumb-ring: transparent;
+  --ok: #15803d;
+  --ok-soft: #dcfce7;
+  --ok-border: #86efac;
+  --warn: #c2410c;
+  --warn-soft: #ffedd5;
+  --warn-border: #fdba74;
   --radius: 8px;
   --max-width: 720px;
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -46,6 +52,12 @@
   --btn-hover: #c8c8ce;
   --thumb-bg: #120f18;
   --thumb-ring: rgba(255, 255, 255, 0.07);
+  --ok: #4ade80;
+  --ok-soft: rgba(74, 222, 128, 0.12);
+  --ok-border: rgba(74, 222, 128, 0.4);
+  --warn: #fb923c;
+  --warn-soft: rgba(251, 146, 60, 0.12);
+  --warn-border: rgba(251, 146, 60, 0.45);
 }
 
 * { box-sizing: border-box; }
@@ -229,9 +241,71 @@ a:focus-visible {
 
 .section-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+/* Search box */
+.search {
+  align-self: center;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 240px;
+  padding: 6px 8px 6px 11px;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  cursor: text;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--ink);
+  background: none;
+  border: none;
+  outline: none;
+}
+
+.search input::placeholder { color: var(--faint); }
+
+.search-key {
+  font-family: inherit;
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 3px 6px;
+  color: var(--muted);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+
+.search:focus-within .search-key { display: none; }
+
+.search + .view-toggle { margin-left: 0; }
+
+.list-empty {
+  margin: 8px 0 0;
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--muted);
+  background: var(--bg-raised);
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
 }
 
 .section-title {
@@ -250,9 +324,27 @@ a:focus-visible {
 
 .topic-chips {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.topic-row {
+  display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 28px;
+}
+
+/* Sub-topics of the chosen branch: smaller, indented under a guide line */
+.topic-row.sub {
+  gap: 6px;
+  padding-left: 14px;
+  border-left: 2px solid var(--border);
+}
+
+.topic-chip.sub {
+  font-size: 0.8rem;
+  padding: 3px 10px;
 }
 
 .topic-chips[hidden] { display: none; }
@@ -394,6 +486,45 @@ a:focus-visible {
 }
 
 .graph-node.dim { opacity: 0.35; }
+
+/* Status dot in a node's corner; incomplete notes get a dashed outline too */
+.graph-status {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+
+.graph-status.complete { background: var(--ok); }
+.graph-status.incomplete { background: var(--warn); }
+.graph-node.is-incomplete:not(.selected):not(:hover) { border-style: dashed; border-color: var(--warn-border); }
+
+/* Branch heading above each block of the graph */
+.graph-group {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border-bottom: 1px solid var(--border);
+}
+
+.graph-group span {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--muted);
+}
 
 .graph-node .note-item-thumb {
   width: 36px;
@@ -866,6 +997,30 @@ body.project-reading #content {
 .tl-card:hover .tl-title,
 .tl-card:focus-visible .tl-title { color: var(--accent); }
 
+/* Complete / incomplete tags (above each node, and in the graph) */
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  padding: 1px 8px 1px 6px;
+  border: 1px solid;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.status-tag.complete { color: var(--ok); background: var(--ok-soft); border-color: var(--ok-border); }
+.status-tag.incomplete { color: var(--warn); background: var(--warn-soft); border-color: var(--warn-border); }
+.status-tag.none { visibility: hidden; }
+
+.tl-item.is-complete .tl-node { border-color: var(--ok); }
+.tl-item.is-incomplete .tl-node { border-color: var(--warn); }
+.timeline.tl-vertical .tl-item .status-tag { align-self: flex-start; }
+
 /* Hover card with the details */
 .tl-pop {
   position: absolute;
@@ -881,23 +1036,19 @@ body.project-reading #content {
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.06);
-  opacity: 0;
   visibility: hidden;
-  transform: translateY(-4px);
-  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
   pointer-events: none;
 }
+
+.tl-item:hover,
+.tl-item:focus-within { z-index: 6; }
 
 .tl-item.tl-pop-left .tl-pop { left: auto; right: 0; }
 .timeline.tl-vertical .tl-pop { left: 36px; right: auto; }
 
 @media (hover: hover) {
   .tl-item:hover .tl-pop,
-  .tl-item:focus-within .tl-pop {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-  }
+  .tl-item:focus-within .tl-pop { visibility: visible; }
 }
 
 .tl-pop-meta {
@@ -1577,11 +1728,14 @@ body.modal-open { overflow: hidden; }
   .nav-link { padding: 6px 8px; font-size: 0.88rem; }
   .nav-link.active::after { left: 8px; right: 8px; bottom: -8px; }
   .section-title { font-size: 1.4rem; }
+  .search { order: 5; width: 100%; margin-left: 0; }
+  .search-key { display: none; }
   .view-toggle button { padding: 4px 8px; font-size: 0; gap: 0; }
   .view-toggle button svg { width: 16px; height: 16px; }
   .graph-node { gap: 8px; padding: 0 8px 0 6px; }
   .graph-node .note-item-thumb { width: 32px; height: 32px; }
-  .topic-chips { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px 24px; padding: 0 16px; scrollbar-width: none; }
+  .topic-chips { margin: 0 -16px 24px; padding: 0 16px; }
+  .topic-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .topic-chip { flex-shrink: 0; }
   #content { padding: 32px 16px 80px; }
 }

@@ -550,12 +550,45 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
     return index;
   }
 
-  // Topic filter chips (from each item's optional "topics" array) and the
-  // count beside the section heading. The chosen topic survives opening and
-  // closing an item.
+  // Topic filters. An item's first topic is its branch (e.g. "Machine
+  // Learning", "Mathematics"); the rest are sub-topics. The first row of
+  // chips picks a branch, and a second row offers that branch's sub-topics.
+  // The choice survives opening and closing an item.
   const chipsEl = document.getElementById(`${kind}-topics`);
   const countEl = document.getElementById(`${kind}-count`);
-  let activeTopic = "all";
+  let activeBranch = "all";
+  let activeSub = "all";
+
+  // Free-text search over title, label, summary, topics and date; every word
+  // typed must match. Works together with the topic chips.
+  const searchEl = document.getElementById(`${kind}-search`);
+  let query = "";
+  let allCache = null;
+  if (searchEl) {
+    searchEl.addEventListener("input", () => {
+      query = searchEl.value.trim().toLowerCase();
+      if (allCache) renderList(allCache);
+    });
+    searchEl.addEventListener("keydown", e => {
+      if (e.key === "Escape" && searchEl.value) { e.stopPropagation(); searchEl.value = ""; query = ""; if (allCache) renderList(allCache); }
+    });
+    // "/" jumps to the search box while this section is open.
+    document.addEventListener("keydown", e => {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (!listEl.closest(".panel").classList.contains("active") || listEl.hidden) return;
+      e.preventDefault();
+      searchEl.focus();
+    });
+  }
+
+  function matchesQuery(it) {
+    if (!query) return true;
+    const hay = [it.title, it.label, it.summary, it.date, ...(it.topics || [])].filter(Boolean).join(" ").toLowerCase()
+      .replace(/<[^>]*>/g, " ");
+    return query.split(/\s+/).every(w => hay.includes(w));
+  }
 
   // Optional List / Graph switch (Notes only for now). The graph shows how
   // the visible items build on each other (js/notes-graph.js).
@@ -579,9 +612,9 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
     viewEl.querySelectorAll("button[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
   }
 
-  function renderGraph(items, allItems) {
+  function renderGraph(items, allItems, empty) {
     if (!graphEl || view !== "graph" || !window.NotesGraph) return;
-    NotesGraph.render(graphEl, items, allItems, id => { location.hash = `#${kind}/${id}`; });
+    NotesGraph.render(graphEl, items, allItems, id => { location.hash = `#${kind}/${id}`; }, empty);
   }
 
   if (viewEl && graphEl) {
@@ -589,39 +622,61 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
     syncView();
   }
 
+  const branchOf = it => (it.topics || [])[0];
+
+  // Most common first; ties keep the order they first appear in.
+  function tally(values) {
+    const counts = new Map();
+    values.forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  }
+
+  function chip(value, label, n, on, level) {
+    return `<button type="button" class="topic-chip${level === "sub" ? " sub" : ""}${on ? " active" : ""}" data-${level}="${escapeHtml(value)}" aria-pressed="${on}">${escapeHtml(label)}<span class="topic-chip-count">${n}</span></button>`;
+  }
+
   function renderChips(items) {
     if (!chipsEl) return;
-    const counts = new Map();
-    items.forEach(it => (it.topics || []).forEach(t => counts.set(t, (counts.get(t) || 0) + 1)));
-    if (!counts.size) { chipsEl.hidden = true; return; }
-    // Most common first; ties keep the order topics first appear in.
-    const topics = [...counts.entries()].sort((a, b) => b[1] - a[1]);
-    const chip = (value, label, n) => {
-      const on = value === activeTopic;
-      return `<button type="button" class="topic-chip${on ? " active" : ""}" data-topic="${escapeHtml(value)}" aria-pressed="${on}">${escapeHtml(label)}<span class="topic-chip-count">${n}</span></button>`;
-    };
-    chipsEl.innerHTML = chip("all", "All", items.length) + topics.map(([t, n]) => chip(t, t, n)).join("");
+    const branches = tally(items.map(branchOf).filter(Boolean));
+    if (!branches.length) { chipsEl.hidden = true; return; }
+    let html = `<div class="topic-row">${chip("all", "All", items.length, activeBranch === "all", "branch")}${branches.map(([b, n]) => chip(b, b, n, b === activeBranch, "branch")).join("")}</div>`;
+    if (activeBranch !== "all") {
+      const inBranch = items.filter(it => branchOf(it) === activeBranch);
+      const subs = tally(inBranch.flatMap(it => (it.topics || []).slice(1)));
+      if (subs.length) {
+        html += `<div class="topic-row sub">${chip("all", `All ${activeBranch}`, inBranch.length, activeSub === "all", "sub")}${subs.map(([t, n]) => chip(t, t, n, t === activeSub, "sub")).join("")}</div>`;
+      }
+    }
+    chipsEl.innerHTML = html;
     chipsEl.hidden = false;
-    chipsEl.querySelectorAll(".topic-chip").forEach(btn => {
-      btn.addEventListener("click", () => {
-        activeTopic = btn.dataset.topic;
-        renderList(items);
-      });
-    });
+    chipsEl.querySelectorAll("[data-branch]").forEach(btn => btn.addEventListener("click", () => {
+      activeBranch = btn.dataset.branch;
+      activeSub = "all";
+      renderList(items);
+    }));
+    chipsEl.querySelectorAll("[data-sub]").forEach(btn => btn.addEventListener("click", () => {
+      activeSub = btn.dataset.sub;
+      renderList(items);
+    }));
   }
 
   function renderList(allItems) {
-    if (activeTopic !== "all" && !allItems.some(it => (it.topics || []).includes(activeTopic))) activeTopic = "all";
+    allCache = allItems;
+    if (activeBranch !== "all" && !allItems.some(it => branchOf(it) === activeBranch)) { activeBranch = "all"; activeSub = "all"; }
     renderChips(allItems);
-    const items = activeTopic === "all" ? allItems : allItems.filter(it => (it.topics || []).includes(activeTopic));
+    let items = allItems;
+    if (activeBranch !== "all") items = items.filter(it => branchOf(it) === activeBranch);
+    if (activeSub !== "all") items = items.filter(it => (it.topics || []).slice(1).includes(activeSub));
+    items = items.filter(matchesQuery);
     if (countEl) countEl.textContent = items.length === allItems.length
       ? countLabel(allItems.length, kind)
       : `${items.length} of ${allItems.length}`;
 
-    Timeline.render(listEl, items, id => { location.hash = `#${kind}/${id}`; });
+    const empty = query ? `No ${kind} match “${escapeHtml(searchEl.value.trim())}”.` : `No ${kind} here yet.`;
+    Timeline.render(listEl, items, id => { location.hash = `#${kind}/${id}`; }, empty);
 
-    lastRender = [items, allItems];
-    renderGraph(items, allItems);
+    lastRender = [items, allItems, empty];
+    renderGraph(items, allItems, empty);
   }
 
   async function showItem(id) {
