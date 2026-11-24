@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Suryansh Singh Shekhawat</title>
-<script src="js/theme.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=clean2">
+<script src="js/theme.js?v=2"></script>
+<link rel="stylesheet" href="css/style.css?v=clean3">
 </head>
 <body>
 
@@ -13,11 +13,18 @@
 
 <header class="site-header">
   <nav class="site-nav">
-    <button class="nav-link" data-section="articles">Articles</button>
-    <button class="nav-link" data-section="projects">Projects</button>
-    <button class="nav-link" data-section="notes">Notes</button>
-    <button class="nav-link" data-section="publications">Publications</button>
-    <button class="nav-link nav-link-about" data-section="about">About</button>
+    <a class="brand" href="#about">
+      <span class="brand-mark" aria-hidden="true"><canvas width="32" height="32" data-anim="mach" data-seed="brand"></canvas></span>
+      <span class="brand-name">Suryansh Singh Shekhawat</span>
+    </a>
+    <div class="nav-links">
+      <button class="nav-link" data-section="articles">Articles</button>
+      <button class="nav-link" data-section="projects">Projects</button>
+      <button class="nav-link" data-section="notes">Notes</button>
+      <button class="nav-link" data-section="publications">Publications</button>
+      <button class="nav-link" data-section="about">About</button>
+    </div>
+    <span class="nav-divider" aria-hidden="true"></span>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch theme"></button>
   </nav>
 </header>
@@ -35,6 +42,8 @@
   </section>
 
   <section id="articles" class="panel">
+    <div class="section-head"><h1 class="section-title">Articles</h1><span id="articles-count" class="section-count"></span></div>
+    <div id="articles-topics" class="topic-chips" hidden></div>
     <div id="articles-list" class="notes-list"></div>
 
     <div id="article-detail" class="notes-detail" hidden>
@@ -47,6 +56,7 @@
   </section>
 
   <section id="projects" class="panel">
+    <div class="section-head"><h1 class="section-title">Projects</h1><span id="projects-count" class="section-count"></span></div>
     <div id="projects-list" class="notes-list"></div>
 
     <div id="project-detail" class="notes-detail" hidden>
@@ -62,6 +72,8 @@
   </section>
 
   <section id="notes" class="panel">
+    <div class="section-head"><h1 class="section-title">Notes</h1><span id="notes-count" class="section-count"></span></div>
+    <div id="notes-topics" class="topic-chips" role="toolbar" aria-label="Filter notes by topic" hidden></div>
     <div id="notes-list" class="notes-list"></div>
 
     <div id="notes-detail" class="notes-detail" hidden>
@@ -74,6 +86,7 @@
   </section>
 
   <section id="publications" class="panel">
+    <div class="section-head"><h1 class="section-title">Publications</h1></div>
     <ul class="entry-list">
       <li class="entry-placeholder">No publications listed yet — check back soon.</li>
     </ul>
@@ -85,7 +98,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="js/thumbs.js?v=1"></script>
-<script src="js/app.js?v=sbx8"></script>
+<script src="js/app.js?v=sbx9"></script>
 <script src="js/views.js?v=1"></script>
 </body>
 </html>

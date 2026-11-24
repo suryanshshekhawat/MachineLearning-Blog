@@ -2,6 +2,7 @@
   {
     "id": "ml-notes-linear-regression",
     "anim": "descent",
+    "topics": ["Machine Learning", "Supervised Learning"],
     "title": "ML 1: Regression, Gradient Descent and Classification",
     "date": "2026-08-28",
     "summary": "Supervised vs. unsupervised learning, linear regression, cost functions, gradient descent, feature scaling, polynomial regression, classification, logistic regression, and regularisation.",
@@ -11,6 +12,7 @@
   {
     "id": "ml-notes-ml2",
     "anim": "network",
+    "topics": ["Machine Learning", "Supervised Learning", "Deep Learning"],
     "title": "ML 2: Neural Networks, Multiclass Classification and Model Diagnostics",
     "date": "2026-08-28",
     "summary": "Activation functions, softmax and multi-label classification, ADAM, layer types, computation graphs, bias/variance, regularisation, transfer learning, skewed data, decision trees and tree ensembles vs. neural networks.",
@@ -20,6 +22,7 @@
   {
     "id": "ml-notes-ml3",
     "anim": "clusters",
+    "topics": ["Machine Learning", "Unsupervised Learning"],
     "title": "ML 3: Clustering, Anomaly Detection and Recommender Systems",
     "date": "2026-08-28",
     "summary": "K-means clustering, anomaly detection with Gaussian distributions, recommender systems, collaborative filtering, principal component analysis, and an introduction to reinforcement learning.",
@@ -29,6 +32,7 @@
   {
     "id": "ml-notes-ml4",
     "anim": "wave",
+    "topics": ["Machine Learning", "Deep Learning", "Sequence Models"],
     "title": "ML 4: Sequence Models and Recurrent Neural Networks",
     "date": "2026-08-28",
     "summary": "RNNs, forward/back-propagation through time, RNN architectures, language modelling, vanishing gradients, GRUs, LSTMs, bidirectional and deep RNNs.",
@@ -38,6 +42,7 @@
   {
     "id": "ml-notes-ml5",
     "anim": "embed",
+    "topics": ["Machine Learning", "Deep Learning", "NLP"],
     "title": "ML 5: Word Representation, Embeddings and Sentiment Classification",
     "date": "2026-09-01",
     "summary": "Word representation, transfer learning with word embeddings, the embedding matrix, neural language models, GloVe, and RNNs for sentiment classification.",
@@ -47,6 +52,7 @@
   {
     "id": "ml-notes-ml6",
     "anim": "attention",
+    "topics": ["Machine Learning", "Deep Learning", "Sequence Models", "NLP"],
     "title": "ML 6: Sequence-to-Sequence Models, Beam Search and Attention",
     "date": "2026-09-11",
     "summary": "Encoder-decoder models, beam search and length normalisation, error analysis, BLEU score, the attention mechanism, speech recognition, and trigger word detection.",
@@ -56,6 +62,7 @@
   {
     "id": "ml-notes-ml7",
     "anim": "transformer",
+    "topics": ["Machine Learning", "Deep Learning", "NLP"],
     "title": "ML 7: Transformer Networks",
     "date": "2026-09-11",
     "summary": "Motivation for moving beyond recurrence, self-attention, multi-head attention, and the Transformer architecture.",

@@ -61,6 +61,18 @@ if (window.siteTheme) {
   siteTheme.onChange(() => document.querySelectorAll(".project-iframe").forEach(applyWidgetTheme));
 }
 
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// "1 note", "7 notes" (plural is the section name: notes, articles, projects).
+function countLabel(n, plural) {
+  return `${n} ${n === 1 ? plural.slice(0, -1) : plural}`;
+}
+
+// The little animated pixel tile next to the name in the header.
+if (siteHeaderEl && window.Thumbs) Thumbs.mount(siteHeaderEl);
+
 const navLinks = document.querySelectorAll(".nav-link");
 const panels = {};
 SECTIONS.forEach(id => { panels[id] = document.getElementById(id); });
@@ -537,7 +549,42 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
     return index;
   }
 
-  function renderList(items) {
+  // Topic filter chips (from each item's optional "topics" array) and the
+  // count beside the section heading. The chosen topic survives opening and
+  // closing an item.
+  const chipsEl = document.getElementById(`${kind}-topics`);
+  const countEl = document.getElementById(`${kind}-count`);
+  let activeTopic = "all";
+
+  function renderChips(items) {
+    if (!chipsEl) return;
+    const counts = new Map();
+    items.forEach(it => (it.topics || []).forEach(t => counts.set(t, (counts.get(t) || 0) + 1)));
+    if (!counts.size) { chipsEl.hidden = true; return; }
+    // Most common first; ties keep the order topics first appear in.
+    const topics = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    const chip = (value, label, n) => {
+      const on = value === activeTopic;
+      return `<button type="button" class="topic-chip${on ? " active" : ""}" data-topic="${escapeHtml(value)}" aria-pressed="${on}">${escapeHtml(label)}<span class="topic-chip-count">${n}</span></button>`;
+    };
+    chipsEl.innerHTML = chip("all", "All", items.length) + topics.map(([t, n]) => chip(t, t, n)).join("");
+    chipsEl.hidden = false;
+    chipsEl.querySelectorAll(".topic-chip").forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeTopic = btn.dataset.topic;
+        renderList(items);
+      });
+    });
+  }
+
+  function renderList(allItems) {
+    if (activeTopic !== "all" && !allItems.some(it => (it.topics || []).includes(activeTopic))) activeTopic = "all";
+    renderChips(allItems);
+    const items = activeTopic === "all" ? allItems : allItems.filter(it => (it.topics || []).includes(activeTopic));
+    if (countEl) countEl.textContent = items.length === allItems.length
+      ? countLabel(allItems.length, kind)
+      : `${items.length} of ${allItems.length}`;
+
     listEl.innerHTML = items.map(item => `
       <button class="note-item" data-item-id="${item.id}">
         ${Thumbs.html(item)}
@@ -639,6 +686,8 @@ async function loadProjectsIndex() {
 }
 
 function renderProjectsList(projects) {
+  const countEl = document.getElementById("projects-count");
+  if (countEl) countEl.textContent = countLabel(projects.length, "projects");
   projectsListEl.innerHTML = projects.map(project => `
     <button class="note-item" data-project-id="${project.id}">
       ${Thumbs.html(project)}

@@ -1,8 +1,7 @@
 // Light / dark theme. Loaded in <head> so the saved choice applies before
-// first paint. With no saved choice the site follows the system setting.
+// first paint. Light is the default; dark only when the visitor picks it.
 (function () {
   const root = document.documentElement;
-  const media = window.matchMedia("(prefers-color-scheme: dark)");
   const listeners = [];
 
   let saved = null;
@@ -10,7 +9,7 @@
   if (saved === "dark" || saved === "light") root.dataset.theme = saved;
 
   function current() {
-    return root.dataset.theme || (media.matches ? "dark" : "light");
+    return root.dataset.theme === "dark" ? "dark" : "light";
   }
 
   function notify() {
@@ -23,8 +22,6 @@
     try { localStorage.setItem("theme", theme); } catch (e) { /* storage blocked */ }
     notify();
   }
-
-  media.addEventListener("change", () => { if (!root.dataset.theme) notify(); });
 
   const ICONS = {
     // Shown in light mode: switch to dark.
