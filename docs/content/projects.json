@@ -41,6 +41,11 @@
     "blocks": [
       { "type": "text", "html": "<h1>Building a Privacy-Preserving Federated Learning System with Secure Aggregation</h1><p class=\"project-meta\">Undergraduate thesis: Bachelor of Engineering (Honours), University of Sydney, MINT Research Group. Supervised by Dr. Ali Shakiba.</p><p>Wind farms don't want to share their sensor data with each other, and honestly, fair enough: it's commercially sensitive. So this thesis builds a system that trains one shared model across several wind farms' data without any of that data ever leaving home, then goes a step further so the training process itself can't be watched either.</p>" },
 
+      { "type": "downloads", "items": [
+        { "label": "Download the draft thesis (PDF, 102 pages)", "href": "downloads/thesis-draft.pdf", "type": "thesis" }
+      ] },
+      { "type": "collapsible-pdf", "label": "Read the draft thesis (102 pages)", "src": "downloads/thesis-draft.pdf" },
+
       { "type": "tldr", "items": [
         "Wind farm operators each sit on rich turbine sensor data, but competitive and legal reasons keep it siloed. Individually too small to train much, collectively plenty.",
         "The system: Federated Learning trains across farms without moving the data, Secure Aggregation stops the server from peeking at anyone's individual update, and Differential Privacy adds a formal guarantee on top if you want it.",
@@ -109,6 +114,8 @@
 
       {"type": "chapter", "number": "06", "id": "progress", "title": "Where the thesis stands"},
 
+      {"type": "text", "html": "<p><strong>Update, November 2026:</strong> the full draft thesis is now written. You can read or download it at the top of this page, or with the buttons at the end of this section. The progress note below is kept as it was written in October.</p>"},
+
       {"type": "text", "html": "<p class=\"project-meta\">Progress note, 13 October 2026. A working update, not thesis text. The research questions below are my current framing, and my supervisor has not yet signed off their wording.</p><p>These are the two questions I am working to, in a sharper form than the proposal I started from (the introduction above still uses the original wording).</p><p>RQ1: how can secure aggregation be integrated into federated learning for cross-silo wind-turbine SCADA regression, and what does it cost in accuracy, computation and robustness to client dropout?</p><p>RQ2: what privacy-utility trade-off do secure aggregation and distributed differential privacy give, relative to centralised and local-only baselines, and how much of the gap is due to data heterogeneity rather than privacy?</p>"},
 
       {"type": "text", "html": "<p>Everything in this section runs on the full CARE To Compare benchmark, release v6 on Zenodo: 95 event files, 3 farms, 36 turbines. An earlier set of results used an older release of the dataset that let some test rows leak into training. I found that, reran everything on the pinned v6 release, and added checks (a file manifest, provenance stamps and a leakage test) so it cannot happen quietly again. None of the earlier numbers are used. It also means the small-sample prototype numbers earlier on this page predate the fix, so treat the numbers in this section as the current ones.</p>"},
@@ -141,6 +148,7 @@
 
       { "type": "text", "html": "<p><strong>Code and data.</strong> The code, every result file and the figures are in the <a href=\"https://github.com/mint-research/26-Suryansh\" target=\"_blank\" rel=\"noopener\">project repository</a>. It does not include the CARE data: download version 6 from <a href=\"https://zenodo.org/records/15846963\" target=\"_blank\" rel=\"noopener\">Zenodo (record 15846963)</a>; the repository README gives the checksum and the steps to rerun everything.</p>"},
 
+      { "type": "collapsible-pdf", "label": "Read the draft thesis (102 pages)", "src": "downloads/thesis-draft.pdf" },
       { "type": "collapsible-pdf", "label": "Read the full literature review (36 pages)", "src": "downloads/thesis-literature-review.pdf" }
     ]
   }
