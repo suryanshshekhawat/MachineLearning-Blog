@@ -8,11 +8,14 @@
   const R = 18;       // radius of the U-turns
   const GUTTER = 12;  // distance of the vertical runs from each side
   const TAIL = 56;    // dotted "more to come" tail after the last entry
+  const MIN_COL = 168, COL_GAP = 24, SIDE_PAD = 68; // column sizing
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+  // As many compact columns as fit (up to five); one column on phones.
   function columnsFor(width) {
-    return width >= 700 ? 3 : width >= 470 ? 2 : 1;
+    const n = Math.floor((width - SIDE_PAD + COL_GAP) / (MIN_COL + COL_GAP));
+    return Math.max(1, Math.min(5, n));
   }
 
   // "2026-08-28" -> "28.08.2026"; anything else is shown as given.
@@ -28,17 +31,27 @@
     return m ? { label: m[1], title: m[2] } : { label: formatDate(item.date), title: item.title };
   }
 
+  // Each entry shows just its label, tile and title; the date, summary and
+  // topics appear in a card on hover or keyboard focus.
   function itemHtml(item) {
     const { label, title } = split(item);
+    const popId = `tl-pop-${esc(item.id)}`;
+    const topics = (item.topics || []).map(t => `<span>${esc(t)}</span>`).join("");
     return `
       <div class="tl-item">
         <span class="tl-node" aria-hidden="true"></span>
         <span class="tl-label">${esc(label)}</span>
-        <button type="button" class="tl-card" data-id="${esc(item.id)}">
-          <span class="tl-head">${Thumbs.html(item)}<span class="tl-title">${title}</span></span>
-          <span class="tl-meta">${esc(formatDate(item.date))}</span>
-          <span class="tl-summary">${item.summary}</span>
+        <button type="button" class="tl-card" data-id="${esc(item.id)}" aria-describedby="${popId}">
+          ${Thumbs.html(item)}
+          <span class="tl-title">${title}</span>
         </button>
+        <div class="tl-pop" id="${popId}" role="tooltip">
+          <span class="tl-pop-meta">${esc(label)} &middot; ${esc(formatDate(item.date))}</span>
+          <span class="tl-pop-title">${title}</span>
+          <span class="tl-pop-summary">${item.summary}</span>
+          ${topics ? `<span class="tl-pop-topics">${topics}</span>` : ""}
+          <span class="tl-pop-hint">Click to open &rarr;</span>
+        </div>
       </div>`;
   }
 
@@ -52,7 +65,10 @@
     el.querySelectorAll(".tl-item").forEach((item, i) => {
       const row = Math.floor(i / n), c = i % n;
       item.style.gridRow = n === 1 ? "" : String(row + 1);
-      item.style.gridColumn = n === 1 ? "" : String(row % 2 === 0 ? c + 1 : n - c);
+      const col = row % 2 === 0 ? c + 1 : n - c;
+      item.style.gridColumn = n === 1 ? "" : String(col);
+      // Hover cards in the right-hand columns open leftwards so they stay on screen.
+      item.classList.toggle("tl-pop-left", n > 1 && col > n / 2 + 0.5);
     });
     return n;
   }
