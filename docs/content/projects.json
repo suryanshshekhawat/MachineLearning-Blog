@@ -1,6 +1,7 @@
 [
   {
     "id": "fl-secagg-dp-thesis",
+    "anim": "federated",
     "title": "Privacy-Preserving Federated Learning with Secure Aggregation",
     "date": "2026-09-01",
     "summary": "Undergraduate thesis: federated learning + secure aggregation + differential privacy, applied to wind farm SCADA telemetry. Small interactive diagrams build up to the real protocol visualiser, embedded live.",

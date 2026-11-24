@@ -27,6 +27,40 @@ function contentHeight(doc) {
   return Math.ceil(bottom + parseFloat(cs.paddingBottom || 0) + parseFloat(cs.marginBottom || 0));
 }
 
+// The embedded widgets (docs/projects/*) take all their colours from a few
+// CSS variables, so in dark mode we override those from here. SVG text and
+// buttons with no colour of their own default to black, so they get one too.
+const WIDGET_DARK_VARS = {
+  "--bg": "#141417",
+  "--ink": "#ececef",
+  "--ink-soft": "#a8a8b1",
+  "--ink-faint": "#6a6a74",
+  "--grid": "#26262b",
+};
+function applyWidgetTheme(frame) {
+  try {
+    const doc = frame.contentDocument;
+    const style = doc.documentElement.style;
+    const dark = window.siteTheme && siteTheme.current() === "dark";
+    Object.entries(WIDGET_DARK_VARS).forEach(([name, value]) => {
+      if (dark) style.setProperty(name, value);
+      else style.removeProperty(name);
+    });
+    let rule = doc.getElementById("site-dark-text");
+    if (dark && !rule) {
+      rule = doc.createElement("style");
+      rule.id = "site-dark-text";
+      rule.textContent = "svg text { fill: var(--ink); } button { color: var(--ink); }";
+      doc.head.appendChild(rule);
+    } else if (!dark && rule) {
+      rule.remove();
+    }
+  } catch { /* not loaded yet, or cross-origin */ }
+}
+if (window.siteTheme) {
+  siteTheme.onChange(() => document.querySelectorAll(".project-iframe").forEach(applyWidgetTheme));
+}
+
 const navLinks = document.querySelectorAll(".nav-link");
 const panels = {};
 SECTIONS.forEach(id => { panels[id] = document.getElementById(id); });
@@ -499,18 +533,20 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
   const pdfControls = initInlinePdfViewer(pdfViewerEl);
 
   async function loadIndex() {
-    if (!index) index = await fetch(contentUrl).then(r => r.json());
+    if (!index) index = await fetch(contentUrl, { cache: "no-cache" }).then(r => r.json());
     return index;
   }
 
   function renderList(items) {
     listEl.innerHTML = items.map(item => `
       <button class="note-item" data-item-id="${item.id}">
+        ${Thumbs.html(item)}
         <p class="note-item-title">${item.title}</p>
         <p class="note-item-meta">${item.date}</p>
         <p class="note-item-summary">${item.summary}</p>
       </button>
     `).join("");
+    Thumbs.mount(listEl);
 
     listEl.querySelectorAll(".note-item").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -597,7 +633,7 @@ let projectsIndex = null;
 
 async function loadProjectsIndex() {
   if (projectsIndex) return projectsIndex;
-  const res = await fetch("content/projects.json");
+  const res = await fetch("content/projects.json", { cache: "no-cache" });
   projectsIndex = await res.json();
   return projectsIndex;
 }
@@ -605,11 +641,13 @@ async function loadProjectsIndex() {
 function renderProjectsList(projects) {
   projectsListEl.innerHTML = projects.map(project => `
     <button class="note-item" data-project-id="${project.id}">
+      ${Thumbs.html(project)}
       <p class="note-item-title">${project.title}</p>
       <p class="note-item-meta">${project.date}</p>
       <p class="note-item-summary">${project.summary}</p>
     </button>
   `).join("");
+  Thumbs.mount(projectsListEl);
 
   projectsListEl.querySelectorAll(".note-item").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -684,6 +722,7 @@ function renderProjectBlock(block) {
       try {
         const doc = frame.contentDocument;
         doc.documentElement.style.overflow = "hidden";
+        applyWidgetTheme(frame);
         const fit = () => {
           const fixed = block.fixedHeightFrom && frame.clientWidth >= block.fixedHeightFrom;
           const h = fixed ? (block.height || 600) : contentHeight(doc);
