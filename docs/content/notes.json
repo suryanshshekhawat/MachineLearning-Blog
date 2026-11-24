@@ -126,6 +126,18 @@
     "pdf": "downloads/notes-set-theory-counting.pdf"
   },
   {
+    "id": "figurate-numbers",
+    "label": "Figurate",
+    "anim": "figurate",
+    "status": "incomplete",
+    "topics": ["Mathematics", "Number Theory", "Combinatorics"],
+    "buildsOn": ["set-theory-counting"],
+    "title": "Figurate Numbers",
+    "date": "January 2025",
+    "summary": "Polygonal and centred polygonal numbers with general and recursive formulas, a reciprocal-sum formula, polyhedral and tetrahedral numbers, and higher-dimensional triangular numbers as binomial coefficients.",
+    "pdf": "downloads/notes-figurate-numbers.pdf"
+  },
+  {
     "id": "complex-numbers",
     "label": "Complex",
     "anim": "roots",
@@ -134,5 +146,26 @@
     "title": "Notes on Complex Numbers",
     "summary": "The imaginary unit, Cartesian arithmetic and conjugates, the Argand plane, modulus, polar and exponential forms, Euler's formula, De Moivre's theorem, nth roots and conjugate-pair roots of polynomials.",
     "pdf": "downloads/notes-complex-numbers.pdf"
+  },
+  {
+    "id": "music-and-mathematics",
+    "label": "Music",
+    "anim": "music",
+    "status": "complete",
+    "topics": ["Mathematics", "Music", "Signal Processing"],
+    "buildsOn": ["complex-numbers"],
+    "title": "Domain Research: Music and Mathematics",
+    "summary": "Mathematical models of notes, waveforms and superposition, ADSR envelopes, harmonics and timbre, AM/FM/PM modulation, sampling, the Fourier transform, and generating a sine tone in Python.",
+    "pdf": "downloads/notes-music-and-mathematics.pdf"
+  },
+  {
+    "id": "ad-infinitum",
+    "label": "Ad Infinitum",
+    "anim": "zeno",
+    "status": "complete",
+    "topics": ["Mathematics", "History of Mathematics", "Analysis"],
+    "title": "Introductory Notes on the Infinite and Ancient Greece (Ad Infinitum)",
+    "summary": "Zeno's dichotomy and Achilles paradoxes, geometric series, Democritus' pyramid volume, Eudoxus' method of exhaustion, Archimedes' quadrature of the parabola and St. Vincent's geometric series.",
+    "pdf": "downloads/notes-ad-infinitum.pdf"
   }
 ]

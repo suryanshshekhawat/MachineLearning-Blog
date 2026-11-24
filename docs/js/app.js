@@ -1,5 +1,5 @@
 const SECTIONS = ["articles", "projects", "notes", "publications", "about"];
-const DEFAULT_SECTION = "articles";
+const DEFAULT_SECTION = "notes";
 const IFRAME_ASSET_VERSION = "6";
 
 // The top nav is sticky; keep its measured height in a CSS variable so other
@@ -672,7 +672,12 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
       ? countLabel(allItems.length, kind)
       : `${items.length} of ${allItems.length}`;
 
-    const empty = query ? `No ${kind} match “${escapeHtml(searchEl.value.trim())}”.` : `No ${kind} here yet.`;
+    // With nothing in the section at all, show its own message and hide the
+    // search box (there is nothing to search).
+    if (searchEl) searchEl.closest(".search").hidden = !allItems.length;
+    const empty = !allItems.length
+      ? (listEl.dataset.empty || `No ${kind} here yet.`)
+      : query ? `No ${kind} match “${escapeHtml(searchEl.value.trim())}”.` : `No ${kind} here yet.`;
     Timeline.render(listEl, items, id => { location.hash = `#${kind}/${id}`; }, empty);
 
     lastRender = [items, allItems, empty];

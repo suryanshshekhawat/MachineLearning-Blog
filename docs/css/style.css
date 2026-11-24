@@ -191,21 +191,14 @@ a:focus-visible {
   background: var(--nav-hover);
 }
 
-.nav-link.active {
-  color: var(--nav-ink);
+/* The current page is a solid pill: black in light mode, white in dark. */
+.nav-link.active,
+.nav-link.active:hover {
+  color: var(--bg);
+  background: var(--ink);
   font-weight: 600;
-}
-
-/* Accent bar under the active link, sitting on the header's bottom edge. */
-.nav-link.active::after {
-  content: "";
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: calc(-1 * var(--nav-pad-y));
-  height: 3px;
-  border-radius: 3px 3px 0 0;
-  background: var(--nav-accent);
+  text-shadow: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
 .nav-divider {
@@ -295,6 +288,7 @@ a:focus-visible {
 }
 
 .search:focus-within .search-key { display: none; }
+.search[hidden] { display: none; }
 
 .search + .view-toggle { margin-left: 0; }
 
@@ -1122,6 +1116,11 @@ body.project-reading #content {
   margin-bottom: 20px;
 }
 
+.project-content > .note-downloads {
+  max-width: var(--max-width);
+  margin: 1.2em auto 0;
+}
+
 .note-downloads a {
   font-size: 0.9rem;
   font-weight: 500;
@@ -1585,6 +1584,8 @@ body.modal-open { overflow: hidden; }
   min-width: 0;
 }
 
+.project-nav[hidden] { display: none; }
+
 .project-nav {
   flex: 0 0 190px;
   display: flex;
@@ -1722,11 +1723,8 @@ body.modal-open { overflow: hidden; }
   .theme-toggle { order: 1; }
   .nav-divider { display: none; }
   .site-nav { padding-bottom: 0; }
-  /* The links row scrolls sideways, which clips anything outside it, so the
-     active bar sits inside the row's own bottom padding instead. */
   .nav-links { order: 2; width: 100%; margin: 0 -4px; padding-bottom: 8px; overflow-x: auto; scrollbar-width: none; }
   .nav-link { padding: 6px 8px; font-size: 0.88rem; }
-  .nav-link.active::after { left: 8px; right: 8px; bottom: -8px; }
   .section-title { font-size: 1.4rem; }
   .search { order: 5; width: 100%; margin-left: 0; }
   .search-key { display: none; }
