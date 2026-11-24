@@ -618,21 +618,7 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
       ? countLabel(allItems.length, kind)
       : `${items.length} of ${allItems.length}`;
 
-    listEl.innerHTML = items.map(item => `
-      <button class="note-item" data-item-id="${item.id}">
-        ${Thumbs.html(item)}
-        <p class="note-item-title">${item.title}</p>
-        <p class="note-item-meta">${item.date}</p>
-        <p class="note-item-summary">${item.summary}</p>
-      </button>
-    `).join("");
-    Thumbs.mount(listEl);
-
-    listEl.querySelectorAll(".note-item").forEach(btn => {
-      btn.addEventListener("click", () => {
-        location.hash = `#${kind}/${btn.dataset.itemId}`;
-      });
-    });
+    Timeline.render(listEl, items, id => { location.hash = `#${kind}/${id}`; });
 
     lastRender = [items, allItems];
     renderGraph(items, allItems);
@@ -724,21 +710,7 @@ async function loadProjectsIndex() {
 function renderProjectsList(projects) {
   const countEl = document.getElementById("projects-count");
   if (countEl) countEl.textContent = countLabel(projects.length, "projects");
-  projectsListEl.innerHTML = projects.map(project => `
-    <button class="note-item" data-project-id="${project.id}">
-      ${Thumbs.html(project)}
-      <p class="note-item-title">${project.title}</p>
-      <p class="note-item-meta">${project.date}</p>
-      <p class="note-item-summary">${project.summary}</p>
-    </button>
-  `).join("");
-  Thumbs.mount(projectsListEl);
-
-  projectsListEl.querySelectorAll(".note-item").forEach(btn => {
-    btn.addEventListener("click", () => {
-      location.hash = `#projects/${btn.dataset.projectId}`;
-    });
-  });
+  Timeline.render(projectsListEl, projects, id => { location.hash = `#projects/${id}`; });
 }
 
 function renderProjectBlock(block) {
