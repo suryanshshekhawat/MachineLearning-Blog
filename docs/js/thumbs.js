@@ -642,7 +642,12 @@
 
   const BANNER_PX = 6; // CSS pixels per banner pixel
 
-  // Fill `canvas` with the banner, sized to cover `host` and re-sized with it.
+  // A fixed moment of the banner animation (ms) — the header shows this one
+  // still frame rather than animating, so it stays calm next to the tiles.
+  const BANNER_FRAME = 6000;
+
+  // Fill `canvas` with a still frame of the banner, sized to cover `host`
+  // and redrawn when the host changes size.
   function banner(canvas, host) {
     const ctx = canvas.getContext("2d");
     const rand = rng(hash("banner"));
@@ -658,13 +663,10 @@
       canvas.style.height = `${h * BANNER_PX}px`;
       tile.img = ctx.createImageData(w, h);
       tile.scene = machBanner(w / h, rng(hash("banner")));
-      draw(tile, performance.now());
+      draw(tile, BANNER_FRAME);
     }
     fit();
     if ("ResizeObserver" in window) new ResizeObserver(fit).observe(host);
-    if (reduceMotion) return;
-    if (io) io.observe(canvas);
-    else { visible.add(tile); kick(); }
   }
 
   window.Thumbs = { html, mount, banner, scenes: Object.keys(SCENES) };
