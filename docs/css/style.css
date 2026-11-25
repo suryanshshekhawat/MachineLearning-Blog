@@ -514,7 +514,6 @@ a:focus-visible {
 
 .graph-status.complete { background: var(--ok); }
 .graph-status.incomplete { background: var(--warn); }
-.graph-node.is-incomplete:not(.selected):not(:hover) { border-style: dashed; border-color: var(--warn-border); }
 
 /* Branch heading above each block of the graph */
 .graph-group {
@@ -721,7 +720,7 @@ body.project-reading .section-head {
   padding: 48px 24px 96px;
 }
 
-body:not(.note-reading):not(.project-reading) #content { max-width: 960px; }
+body:not(.note-reading):not(.project-reading) #content { max-width: 1120px; }
 
 body.note-reading #content,
 body.project-reading #content {
@@ -937,7 +936,6 @@ body.project-reading #content {
   z-index: 1;
   width: 18px;
   height: 18px;
-  flex-shrink: 0;
   border-radius: 50%;
   background: var(--bg);
   border: 3px solid var(--tl-line);
@@ -955,13 +953,15 @@ body.project-reading #content {
   background: var(--btn-bg);
   padding: 3px 8px;
   border-radius: 4px;
+  white-space: nowrap;
 }
 
 .tl-card {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
   width: 100%;
+  min-width: 0;
   padding: 0;
   text-align: left;
   color: inherit;
@@ -972,80 +972,67 @@ body.project-reading #content {
 }
 
 .tl-card .note-item-thumb {
-  width: 44px;
-  height: 44px;
+  width: 64px;
+  height: 64px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .tl-card:hover .note-item-thumb,
 .tl-card:focus-visible .note-item-thumb {
-  transform: scale(1.06);
+  transform: scale(1.05);
   box-shadow: inset 0 0 0 1px var(--thumb-ring), 0 0 0 2px var(--accent-soft);
 }
 
+.tl-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
 .tl-title {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.35;
   color: var(--ink);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   transition: color 0.15s;
 }
 
 .tl-card:hover .tl-title,
 .tl-card:focus-visible .tl-title { color: var(--accent); }
 
-/* Complete / incomplete tags (above each node, and in the graph) */
-.status-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  line-height: 1.5;
-  padding: 1px 8px 1px 6px;
-  border: 1px solid;
-  border-radius: 999px;
-  white-space: nowrap;
+.tl-summary {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.status-tag.complete { color: var(--ok); background: var(--ok-soft); border-color: var(--ok-border); }
-.status-tag.incomplete { color: var(--warn); background: var(--warn-soft); border-color: var(--warn-border); }
-.status-tag.none { visibility: hidden; }
-
-.tl-item.is-complete .tl-node { border-color: var(--ok); }
-.tl-item.is-incomplete .tl-node { border-color: var(--warn); }
 .tl-date { display: none; }
 
-/* Wide lists: each entry is one row (status, label, tile and title, date),
+/* Wide lists: each entry is one row (label, tile, title and summary, date),
    with its node centred on the line. */
-.timeline.tl-wide { gap: 6px; }
+.timeline.tl-wide { gap: 14px; }
 
 .timeline.tl-wide .tl-item {
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr) auto;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
   align-items: center;
-  column-gap: 16px;
-  min-height: 60px;
-}
-
-.timeline.tl-wide.tl-has-status .tl-item {
-  grid-template-columns: 110px 116px minmax(0, 1fr) auto;
+  column-gap: 20px;
+  min-height: 76px;
 }
 
 .timeline.tl-wide .tl-node { top: calc(50% - 9px); }
-.timeline.tl-wide .status-tag,
 .timeline.tl-wide .tl-label { justify-self: start; }
+.timeline.tl-wide .tl-summary { -webkit-line-clamp: 1; }
 
 .timeline.tl-wide .tl-date {
   display: block;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: var(--muted);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -1053,10 +1040,117 @@ body.project-reading #content {
 
 /* The hover card opens under the title column. */
 .timeline.tl-wide .tl-pop {
-  grid-column: -3;
+  grid-column: 2;
   grid-row: 1;
   left: 0;
   top: calc(100% + 4px);
+}
+
+/* Small status mark: green tick (complete), orange half circle (in progress) */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  vertical-align: -2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.status svg { flex-shrink: 0; }
+.status.complete { color: var(--ok); }
+.status.incomplete { color: var(--warn); }
+.tl-title .status { margin-left: 4px; }
+
+/* ---- Card grid (Misc) ---- */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 22px;
+  padding-bottom: 40px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.card:hover,
+.card:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 0 0 3px var(--accent-soft);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+/* The tile becomes a wide banner across the top of the card. */
+.card .note-item-thumb {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.card:hover .note-item-thumb { transform: none; box-shadow: none; }
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px 16px;
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.card-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.card-date {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.card-summary {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* Hover card with the details */

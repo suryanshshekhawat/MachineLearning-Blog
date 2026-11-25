@@ -550,7 +550,7 @@ function renderComments(kind, id, containerEl) {
 // Shared by any section that's just "a list of PDFs with downloads and comments"
 // (notes, articles). Projects are structurally different (composed blocks), so
 // they get their own logic further down.
-function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloadsEl, pdfViewerEl, commentsEl, backBtn }) {
+function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloadsEl, pdfViewerEl, commentsEl, backBtn, layout = "timeline" }) {
   let index = null;
   const pdfControls = initInlinePdfViewer(pdfViewerEl);
 
@@ -692,7 +692,8 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
     const empty = !allItems.length
       ? (listEl.dataset.empty || `No ${kind} here yet.`)
       : query ? `Nothing matches “${escapeHtml(searchEl.value.trim())}”.` : `No ${kind} here yet.`;
-    Timeline.render(listEl, items, id => { location.hash = `#${kind}/${id}`; }, empty);
+    const draw = layout === "cards" ? Timeline.renderCards : Timeline.render;
+    draw(listEl, items, id => { location.hash = `#${kind}/${id}`; }, empty);
 
     lastRender = [items, allItems, empty];
     renderGraph(items, allItems, empty);
@@ -787,6 +788,7 @@ const miscLibrary = createPdfLibrary({
   pdfViewerEl: miscPdfViewerEl,
   commentsEl: miscCommentsEl,
   backBtn: backToMiscBtn,
+  layout: "cards",
 });
 
 let projectsIndex = null;
