@@ -6,7 +6,7 @@
 <title>Suryansh Singh Shekhawat</title>
 <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
 <script src="js/theme.js?v=2"></script>
-<link rel="stylesheet" href="css/style.css?v=clean13">
+<link rel="stylesheet" href="css/style.css?v=clean14">
 </head>
 <body>
 
@@ -55,9 +55,11 @@
     <div class="section-head">
       <h1 class="section-title">Articles</h1><span id="articles-count" class="section-count"></span>
       <label class="search" for="articles-search"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="m10.5 10.5 3.5 3.5"/></svg><input type="search" id="articles-search" placeholder="Search articles" autocomplete="off" spellcheck="false"><kbd class="search-key" aria-hidden="true">/</kbd></label>
+      <div id="articles-view" class="view-toggle" role="group" aria-label="View"><button type="button" data-view="tiles" aria-pressed="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Tiles</button><button type="button" data-view="timeline" aria-pressed="false"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3.5 1.5v13"/><circle cx="3.5" cy="4" r="1.6" fill="currentColor"/><circle cx="3.5" cy="12" r="1.6" fill="currentColor"/><path d="M7 4h7M7 12h7"/></svg>Timeline</button><button type="button" data-view="graph" aria-pressed="false"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="3" r="1.8"/><circle cx="3.5" cy="13" r="1.8"/><circle cx="12.5" cy="13" r="1.8"/><path d="M7 4.6 4.5 11.4M9 4.6l2.5 6.8"/></svg>Graph</button></div>
     </div>
     <div id="articles-topics" class="topic-chips" hidden></div>
     <div id="articles-list" class="notes-list" data-empty="Nothing here yet. Articles, including my takes on AI, are on the way."></div>
+    <div id="articles-graph" class="notes-graph"></div>
 
     <div id="article-detail" class="notes-detail" hidden>
       <button id="back-to-articles" class="back-link">&larr; Back to articles</button>
@@ -69,8 +71,12 @@
   </section>
 
   <section id="projects" class="panel">
-    <div class="section-head"><h1 class="section-title">Projects</h1><span id="projects-count" class="section-count"></span></div>
+    <div class="section-head">
+      <h1 class="section-title">Projects</h1><span id="projects-count" class="section-count"></span>
+      <div id="projects-view" class="view-toggle" role="group" aria-label="View"><button type="button" data-view="tiles" aria-pressed="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Tiles</button><button type="button" data-view="timeline" aria-pressed="false"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3.5 1.5v13"/><circle cx="3.5" cy="4" r="1.6" fill="currentColor"/><circle cx="3.5" cy="12" r="1.6" fill="currentColor"/><path d="M7 4h7M7 12h7"/></svg>Timeline</button><button type="button" data-view="graph" aria-pressed="false"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="3" r="1.8"/><circle cx="3.5" cy="13" r="1.8"/><circle cx="12.5" cy="13" r="1.8"/><path d="M7 4.6 4.5 11.4M9 4.6l2.5 6.8"/></svg>Graph</button></div>
+    </div>
     <div id="projects-list" class="notes-list"></div>
+    <div id="projects-graph" class="notes-graph"></div>
 
     <div id="project-detail" class="notes-detail" hidden>
       <button id="back-to-projects" class="back-link">&larr; Back to projects</button>
@@ -88,10 +94,7 @@
     <div class="section-head">
       <h1 class="section-title">Notes</h1><span id="notes-count" class="section-count"></span>
       <label class="search" for="notes-search"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="m10.5 10.5 3.5 3.5"/></svg><input type="search" id="notes-search" placeholder="Search notes" autocomplete="off" spellcheck="false"><kbd class="search-key" aria-hidden="true">/</kbd></label>
-      <div id="notes-view" class="view-toggle" role="group" aria-label="View">
-        <button type="button" data-view="list" aria-pressed="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 4h8M5 8h8M5 12h8"/><circle cx="2.5" cy="4" r=".6" fill="currentColor"/><circle cx="2.5" cy="8" r=".6" fill="currentColor"/><circle cx="2.5" cy="12" r=".6" fill="currentColor"/></svg>List</button>
-        <button type="button" data-view="graph" aria-pressed="false"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="3" r="1.8"/><circle cx="3.5" cy="13" r="1.8"/><circle cx="12.5" cy="13" r="1.8"/><path d="M7 4.6 4.5 11.4M9 4.6l2.5 6.8"/></svg>Graph</button>
-      </div>
+      <div id="notes-view" class="view-toggle" role="group" aria-label="View"><button type="button" data-view="tiles" aria-pressed="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Tiles</button><button type="button" data-view="timeline" aria-pressed="false"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3.5 1.5v13"/><circle cx="3.5" cy="4" r="1.6" fill="currentColor"/><circle cx="3.5" cy="12" r="1.6" fill="currentColor"/><path d="M7 4h7M7 12h7"/></svg>Timeline</button><button type="button" data-view="graph" aria-pressed="false"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="3" r="1.8"/><circle cx="3.5" cy="13" r="1.8"/><circle cx="12.5" cy="13" r="1.8"/><path d="M7 4.6 4.5 11.4M9 4.6l2.5 6.8"/></svg>Graph</button></div>
     </div>
     <div id="notes-topics" class="topic-chips" role="toolbar" aria-label="Filter notes by topic" hidden></div>
     <div id="notes-list" class="notes-list"></div>
@@ -110,9 +113,11 @@
     <div class="section-head">
       <h1 class="section-title">Miscellaneous</h1><span id="misc-count" class="section-count"></span>
       <label class="search" for="misc-search"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="m10.5 10.5 3.5 3.5"/></svg><input type="search" id="misc-search" placeholder="Search" autocomplete="off" spellcheck="false"><kbd class="search-key" aria-hidden="true">/</kbd></label>
+      <div id="misc-view" class="view-toggle" role="group" aria-label="View"><button type="button" data-view="tiles" aria-pressed="true"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Tiles</button><button type="button" data-view="timeline" aria-pressed="false"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3.5 1.5v13"/><circle cx="3.5" cy="4" r="1.6" fill="currentColor"/><circle cx="3.5" cy="12" r="1.6" fill="currentColor"/><path d="M7 4h7M7 12h7"/></svg>Timeline</button><button type="button" data-view="graph" aria-pressed="false"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="3" r="1.8"/><circle cx="3.5" cy="13" r="1.8"/><circle cx="12.5" cy="13" r="1.8"/><path d="M7 4.6 4.5 11.4M9 4.6l2.5 6.8"/></svg>Graph</button></div>
     </div>
     <p class="section-intro">Side interests outside machine learning: mathematics notes and older write-ups.</p>
     <div id="misc-list" class="notes-list"></div>
+    <div id="misc-graph" class="notes-graph"></div>
 
     <div id="misc-detail" class="notes-detail" hidden>
       <button id="back-to-misc" class="back-link">&larr; Back to miscellaneous</button>
@@ -137,8 +142,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="js/thumbs.js?v=3"></script>
 <script src="js/timeline.js?v=5"></script>
-<script src="js/notes-graph.js?v=5"></script>
-<script src="js/app.js?v=sbx16"></script>
+<script src="js/notes-graph.js?v=6"></script>
+<script src="js/app.js?v=sbx17"></script>
 <script src="js/views.js?v=1"></script>
 </body>
 </html>

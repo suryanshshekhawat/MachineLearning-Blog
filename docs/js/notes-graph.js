@@ -246,7 +246,7 @@
         <p class="gp-summary">${it.summary}</p>
         <div class="gp-links"><span class="gp-links-label">Builds on</span>${before.length ? before.map(chip).join("") : `<span class="gp-none">a starting point</span>`}</div>
         <div class="gp-links"><span class="gp-links-label">Leads to</span>${after.length ? after.map(chip).join("") : `<span class="gp-none">nothing yet</span>`}</div>
-        <button type="button" class="gp-open" data-open="${esc(id)}">Open note &rarr;</button>`;
+        <button type="button" class="gp-open" data-open="${esc(id)}">Open &rarr;</button>`;
     }
 
     function select(id, { focusNode = false, reveal = false } = {}) {

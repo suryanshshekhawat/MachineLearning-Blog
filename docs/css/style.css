@@ -708,9 +708,12 @@ a:focus-visible {
 body.note-reading .section-head,
 body.note-reading .topic-chips,
 body.note-reading .panel.view-graph .notes-graph,
+body.project-reading .panel.view-graph .notes-graph,
 body.project-reading .section-head {
   display: none;
 }
+
+.view-toggle[hidden] { display: none; }
 
 /* ---- Main content ---- */
 

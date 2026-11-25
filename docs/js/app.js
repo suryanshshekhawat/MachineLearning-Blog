@@ -61,6 +61,37 @@ if (window.siteTheme) {
   siteTheme.onChange(() => document.querySelectorAll(".project-iframe").forEach(applyWidgetTheme));
 }
 
+// Tiles / Timeline / Graph switch for a section. Tiles is the default; the
+// choice is remembered per section. onChange re-renders the section.
+function createViewSwitch(kind, panelEl, onChange) {
+  const VIEWS = ["tiles", "timeline", "graph"];
+  const el = document.getElementById(`${kind}-view`);
+  const key = `${kind}:layout`;
+  let view = "tiles";
+  try { const saved = localStorage.getItem(key); if (VIEWS.includes(saved)) view = saved; } catch { /* storage blocked */ }
+
+  function sync() {
+    panelEl.classList.toggle("view-graph", view === "graph");
+    if (el) el.querySelectorAll("button[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+  }
+
+  if (el) {
+    el.querySelectorAll("button[data-view]").forEach(b => b.addEventListener("click", () => {
+      if (b.dataset.view === view) return;
+      view = b.dataset.view;
+      try { localStorage.setItem(key, view); } catch { /* storage blocked */ }
+      sync();
+      onChange();
+    }));
+  }
+  sync();
+
+  return {
+    get: () => view,
+    setHidden(hidden) { if (el) el.hidden = hidden; },
+  };
+}
+
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
@@ -550,7 +581,7 @@ function renderComments(kind, id, containerEl) {
 // Shared by any section that's just "a list of PDFs with downloads and comments"
 // (notes, articles). Projects are structurally different (composed blocks), so
 // they get their own logic further down.
-function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloadsEl, pdfViewerEl, commentsEl, backBtn, layout = "timeline" }) {
+function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloadsEl, pdfViewerEl, commentsEl, backBtn }) {
   let index = null;
   const pdfControls = initInlinePdfViewer(pdfViewerEl);
 
@@ -599,36 +630,14 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
     return query.split(/\s+/).every(w => hay.includes(w));
   }
 
-  // Optional List / Graph switch (Notes only for now). The graph shows how
-  // the visible items build on each other (js/notes-graph.js).
-  const panelEl = listEl.closest(".panel");
-  const viewEl = document.getElementById(`${kind}-view`);
+  // Tiles / Timeline / Graph switch for this section (see createViewSwitch).
   const graphEl = document.getElementById(`${kind}-graph`);
-  let view = "list";
-  try { if (localStorage.getItem(`${kind}:view`) === "graph") view = "graph"; } catch { /* storage blocked */ }
   let lastRender = null;
-
-  function setView(next) {
-    view = next;
-    try { localStorage.setItem(`${kind}:view`, next); } catch { /* storage blocked */ }
-    syncView();
-    if (lastRender) renderGraph(...lastRender);
-  }
-
-  function syncView() {
-    if (!viewEl || !graphEl) return;
-    panelEl.classList.toggle("view-graph", view === "graph");
-    viewEl.querySelectorAll("button[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
-  }
+  const viewSwitch = createViewSwitch(kind, listEl.closest(".panel"), () => { if (allCache) renderList(allCache); });
 
   function renderGraph(items, allItems, empty) {
-    if (!graphEl || view !== "graph" || !window.NotesGraph) return;
+    if (!graphEl || viewSwitch.get() !== "graph" || !window.NotesGraph) return;
     NotesGraph.render(graphEl, items, allItems, id => { location.hash = `#${kind}/${id}`; }, empty);
-  }
-
-  if (viewEl && graphEl) {
-    viewEl.querySelectorAll("button[data-view]").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
-    syncView();
   }
 
   const branchOf = it => (it.topics || [])[0];
@@ -687,12 +696,14 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
       : `${items.length} of ${allItems.length}`;
 
     // With nothing in the section at all, show its own message and hide the
-    // search box (there is nothing to search).
+    // search box and view switch (there is nothing to search or arrange).
     if (searchEl) searchEl.closest(".search").hidden = !allItems.length;
+    viewSwitch.setHidden(!allItems.length);
     const empty = !allItems.length
       ? (listEl.dataset.empty || `No ${kind} here yet.`)
       : query ? `Nothing matches “${escapeHtml(searchEl.value.trim())}”.` : `No ${kind} here yet.`;
-    const draw = layout === "cards" ? Timeline.renderCards : Timeline.render;
+    // Tiles by default; in graph view the list underneath is hidden.
+    const draw = viewSwitch.get() === "tiles" ? Timeline.renderCards : Timeline.render;
     draw(listEl, items, id => { location.hash = `#${kind}/${id}`; }, empty);
 
     lastRender = [items, allItems, empty];
@@ -788,7 +799,6 @@ const miscLibrary = createPdfLibrary({
   pdfViewerEl: miscPdfViewerEl,
   commentsEl: miscCommentsEl,
   backBtn: backToMiscBtn,
-  layout: "cards",
 });
 
 let projectsIndex = null;
@@ -800,10 +810,18 @@ async function loadProjectsIndex() {
   return projectsIndex;
 }
 
+const projectsGraphEl = document.getElementById("projects-graph");
+let projectsCache = null;
+const projectsView = createViewSwitch("projects", projectsListEl.closest(".panel"), () => { if (projectsCache) renderProjectsList(projectsCache); });
+
 function renderProjectsList(projects) {
+  projectsCache = projects;
   const countEl = document.getElementById("projects-count");
   if (countEl) countEl.textContent = countLabel(projects.length, "projects");
-  Timeline.render(projectsListEl, projects, id => { location.hash = `#projects/${id}`; });
+  const open = id => { location.hash = `#projects/${id}`; };
+  const draw = projectsView.get() === "tiles" ? Timeline.renderCards : Timeline.render;
+  draw(projectsListEl, projects, open);
+  if (projectsView.get() === "graph" && window.NotesGraph) NotesGraph.render(projectsGraphEl, projects, projects, open);
 }
 
 function renderProjectBlock(block) {
