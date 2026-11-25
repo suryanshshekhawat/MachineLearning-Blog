@@ -157,12 +157,25 @@ a:focus-visible {
   transition: transform 0.2s;
 }
 
-.brand:hover { transform: scale(1.04); }
+.brand { gap: 10px; text-decoration: none; }
+.brand:hover { transform: scale(1.03); }
 
-.brand-logo {
+/* Pixel "SS" monogram tile */
+.brand-mark {
   display: block;
-  height: 44px;
-  width: auto;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: #120f18;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.brand-name {
+  color: #ffffff;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
 .nav-links {
@@ -1749,7 +1762,8 @@ body.modal-open { overflow: hidden; }
 @media (max-width: 600px) {
   .site-nav { --nav-pad-y: 8px; flex-wrap: wrap; padding: 8px 12px 8px 12px; row-gap: 4px; }
   .brand { order: 0; }
-  .brand-logo { height: 38px; }
+  .brand-mark { width: 30px; height: 30px; }
+  .brand-name { font-size: 0.96rem; }
   .theme-toggle { order: 1; }
   .nav-divider { display: none; }
   .site-nav { padding-bottom: 0; }
