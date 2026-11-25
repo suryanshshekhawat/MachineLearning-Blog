@@ -1,38 +1,5 @@
 [
   {
-    "id": "cancelling-sequences",
-    "anim": "sieve",
-    "title": "Introducing Cancelling Sequences, with Applications to Sieve Theory",
-    "date": "2021",
-    "summary": "Prime numbers as arithmetic progressions with terms removed. A tool (cancelling sequences) that generalises the sieves of Eratosthenes and Sundaram into generating formulae with a few unknowns.",
-    "blocks": [
-      {
-        "type": "text",
-        "html": "<h1>Introducing Cancelling Sequences, with Applications to Sieve Theory</h1><p class=\"project-meta\">2021 &middot; Number theory</p><p>Prime numbers as arithmetic progressions with terms removed. A tool (cancelling sequences) that generalises the sieves of Eratosthenes and Sundaram into generating formulae with a few unknowns.</p>"
-      },
-      {
-        "type": "downloads",
-        "items": [
-          {
-            "label": "Download PDF",
-            "href": "downloads/article-cancelling-sequences.pdf",
-            "type": "pdf"
-          },
-          {
-            "label": "Download LaTeX source (.zip)",
-            "href": "downloads/article-cancelling-sequences-latex.zip",
-            "type": "zip"
-          }
-        ]
-      },
-      {
-        "type": "collapsible-pdf",
-        "label": "Read the paper",
-        "src": "downloads/article-cancelling-sequences.pdf"
-      }
-    ]
-  },
-  {
     "id": "fl-secagg-dp-thesis",
     "anim": "federated",
     "title": "Privacy-Preserving Federated Learning with Secure Aggregation",

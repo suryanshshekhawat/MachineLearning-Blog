@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Suryansh Singh Shekhawat</title>
 <script src="js/theme.js?v=2"></script>
-<link rel="stylesheet" href="css/style.css?v=clean9">
+<link rel="stylesheet" href="css/style.css?v=clean11">
 </head>
 <body>
 
@@ -22,6 +22,7 @@
       <button class="nav-link" data-section="projects">Projects</button>
       <button class="nav-link" data-section="notes">Notes</button>
       <button class="nav-link" data-section="publications">Publications</button>
+      <button class="nav-link" data-section="misc">Misc</button>
       <button class="nav-link" data-section="about">About</button>
     </div>
     <span class="nav-divider" aria-hidden="true"></span>
@@ -103,6 +104,23 @@
     </div>
   </section>
 
+  <section id="misc" class="panel">
+    <div class="section-head">
+      <h1 class="section-title">Miscellaneous</h1><span id="misc-count" class="section-count"></span>
+      <label class="search" for="misc-search"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="m10.5 10.5 3.5 3.5"/></svg><input type="search" id="misc-search" placeholder="Search" autocomplete="off" spellcheck="false"><kbd class="search-key" aria-hidden="true">/</kbd></label>
+    </div>
+    <p class="section-intro">Side interests outside machine learning: mathematics notes and older write-ups.</p>
+    <div id="misc-list" class="notes-list"></div>
+
+    <div id="misc-detail" class="notes-detail" hidden>
+      <button id="back-to-misc" class="back-link">&larr; Back to miscellaneous</button>
+      <h3 id="misc-title" class="note-title"></h3>
+      <div id="misc-downloads" class="note-downloads"></div>
+      <div id="misc-pdf-viewer" class="pdf-viewer"></div>
+      <div id="misc-comments" class="comments"></div>
+    </div>
+  </section>
+
   <section id="publications" class="panel">
     <div class="section-head"><h1 class="section-title">Publications</h1></div>
     <ul class="entry-list">
@@ -116,9 +134,9 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="js/thumbs.js?v=3"></script>
-<script src="js/timeline.js?v=3"></script>
-<script src="js/notes-graph.js?v=3"></script>
-<script src="js/app.js?v=sbx14"></script>
+<script src="js/timeline.js?v=4"></script>
+<script src="js/notes-graph.js?v=4"></script>
+<script src="js/app.js?v=sbx15"></script>
 <script src="js/views.js?v=1"></script>
 </body>
 </html>

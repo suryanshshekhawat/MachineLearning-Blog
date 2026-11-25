@@ -1,0 +1,99 @@
+[
+  {
+    "id": "cancelling-sequences",
+    "label": "Sieve Theory",
+    "anim": "sieve",
+    "topics": ["Mathematics", "Number Theory"],
+    "title": "Introducing Cancelling Sequences, with Applications to Sieve Theory",
+    "date": "2021",
+    "summary": "Prime numbers as arithmetic progressions with terms removed. A tool (cancelling sequences) that generalises the sieves of Eratosthenes and Sundaram into generating formulae with a few unknowns.",
+    "pdf": "downloads/article-cancelling-sequences.pdf",
+    "zip": "downloads/article-cancelling-sequences-latex.zip"
+  },
+  {
+    "id": "number-theory-intro",
+    "label": "NT Intro",
+    "anim": "modular",
+    "status": "complete",
+    "topics": ["Mathematics", "Number Theory", "Modular Arithmetic"],
+    "title": "Number Theory Introduction",
+    "summary": "Number sets, parity, Pythagorean triples, divisibility rules, primes and the Sieve of Eratosthenes, GCD/LCM and the Euclidean algorithm, divisor counting, linear Diophantine equations and modular arithmetic.",
+    "pdf": "downloads/notes-number-theory-intro.pdf"
+  },
+  {
+    "id": "fibonacci-numbers",
+    "label": "Fibonacci",
+    "anim": "fibonacci",
+    "status": "incomplete",
+    "topics": ["Mathematics", "Sequences", "Number Theory"],
+    "buildsOn": ["number-theory-intro"],
+    "title": "Notes on Fibonacci Numbers",
+    "summary": "The Fibonacci sequence and its identities: sums of terms, odd and even terms and squares, the addition formula by induction, divisibility, and formulas for multiples.",
+    "pdf": "downloads/notes-fibonacci-numbers.pdf"
+  },
+  {
+    "id": "experimental-number-theory",
+    "label": "NT Lab",
+    "anim": "gcd",
+    "status": "incomplete",
+    "topics": ["Mathematics", "Number Theory", "Experimental"],
+    "buildsOn": ["number-theory-intro", "fibonacci-numbers"],
+    "title": "My Experimental Introduction to Number Theory",
+    "date": "January 2025",
+    "summary": "Divisors and divisor counts, the division algorithm, GCD with the Euclidean and extended Euclidean algorithms, Lamé's theorem, unique factorisation, the Sieve of Eratosthenes and the Prime Number Theorem.",
+    "pdf": "downloads/notes-experimental-number-theory.pdf"
+  },
+  {
+    "id": "set-theory-counting",
+    "label": "Counting",
+    "anim": "pascal",
+    "status": "incomplete",
+    "topics": ["Mathematics", "Combinatorics", "Set Theory"],
+    "title": "Notes on Set Theory and Counting",
+    "summary": "Tower of Hanoi, sets and cardinality, set operations, relations and functions, counting principles, permutations, binomial and multinomial coefficients, Pascal's triangle, inclusion–exclusion, derangements and Stirling numbers.",
+    "pdf": "downloads/notes-set-theory-counting.pdf"
+  },
+  {
+    "id": "figurate-numbers",
+    "label": "Figurate",
+    "anim": "figurate",
+    "status": "incomplete",
+    "topics": ["Mathematics", "Number Theory", "Combinatorics"],
+    "buildsOn": ["set-theory-counting"],
+    "title": "Figurate Numbers",
+    "date": "January 2025",
+    "summary": "Polygonal and centred polygonal numbers with general and recursive formulas, a reciprocal-sum formula, polyhedral and tetrahedral numbers, and higher-dimensional triangular numbers as binomial coefficients.",
+    "pdf": "downloads/notes-figurate-numbers.pdf"
+  },
+  {
+    "id": "complex-numbers",
+    "label": "Complex",
+    "anim": "roots",
+    "status": "complete",
+    "topics": ["Mathematics", "Algebra"],
+    "title": "Notes on Complex Numbers",
+    "summary": "The imaginary unit, Cartesian arithmetic and conjugates, the Argand plane, modulus, polar and exponential forms, Euler's formula, De Moivre's theorem, nth roots and conjugate-pair roots of polynomials.",
+    "pdf": "downloads/notes-complex-numbers.pdf"
+  },
+  {
+    "id": "music-and-mathematics",
+    "label": "Music",
+    "anim": "music",
+    "status": "complete",
+    "topics": ["Mathematics", "Music", "Signal Processing"],
+    "buildsOn": ["complex-numbers"],
+    "title": "Domain Research: Music and Mathematics",
+    "summary": "Mathematical models of notes, waveforms and superposition, ADSR envelopes, harmonics and timbre, AM/FM/PM modulation, sampling, the Fourier transform, and generating a sine tone in Python.",
+    "pdf": "downloads/notes-music-and-mathematics.pdf"
+  },
+  {
+    "id": "ad-infinitum",
+    "label": "Ad Infinitum",
+    "anim": "zeno",
+    "status": "complete",
+    "topics": ["Mathematics", "History of Mathematics", "Analysis"],
+    "title": "Introductory Notes on the Infinite and Ancient Greece (Ad Infinitum)",
+    "summary": "Zeno's dichotomy and Achilles paradoxes, geometric series, Democritus' pyramid volume, Eudoxus' method of exhaustion, Archimedes' quadrature of the parabola and St. Vincent's geometric series.",
+    "pdf": "downloads/notes-ad-infinitum.pdf"
+  }
+]

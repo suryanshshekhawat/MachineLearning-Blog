@@ -116,11 +116,14 @@
       const heads = [];
       let y = 0, row = 0;
       groups.forEach((g, gi) => {
-        if (gi) y += GROUP_GAP;
-        const done = g.items.filter(it => it.status === "complete").length;
-        const withStatus = g.items.filter(it => it.status).length;
-        heads.push(`<div class="graph-group" style="top:${y}px">${esc(g.name || "Other")}<span>${g.items.length} ${g.items.length === 1 ? "note" : "notes"}${withStatus ? ` &middot; ${done} complete` : ""}</span></div>`);
-        y += GROUP_HEAD;
+        // Branch headings only when there is more than one branch.
+        if (groups.length > 1) {
+          if (gi) y += GROUP_GAP;
+          const done = g.items.filter(it => it.status === "complete").length;
+          const withStatus = g.items.filter(it => it.status).length;
+          heads.push(`<div class="graph-group" style="top:${y}px">${esc(g.name || "Other")}<span>${g.items.length} ${g.items.length === 1 ? "note" : "notes"}${withStatus ? ` &middot; ${done} complete` : ""}</span></div>`);
+          y += GROUP_HEAD;
+        }
         const levels = [...new Set(g.items.map(it => layers.get(it.id)))].sort((a, b) => a - b);
         levels.forEach(l => {
           const level = g.items.filter(it => layers.get(it.id) === l);

@@ -1,22 +1,14 @@
 // Serial timeline for the Articles / Projects / Notes lists.
 //
-// Entries sit in a grid, and one continuous line runs through every entry's
-// node: left to right along the first row, a rounded U-turn down at the end,
-// right to left along the next row, and so on. On narrow screens there is a
-// single column and the line simply runs down the left side.
+// One line runs straight down the left side through a node for every entry,
+// ending in a dotted "more to come" tail. On wide screens each entry is a
+// compact row (status, label, tile and title, date); on narrow screens the
+// same pieces stack.
 (function () {
-  const R = 18;       // radius of the U-turns
-  const GUTTER = 12;  // distance of the vertical runs from each side
-  const TAIL = 56;    // dotted "more to come" tail after the last entry
-  const MIN_COL = 168, COL_GAP = 24, SIDE_PAD = 68; // column sizing
+  const TAIL = 48;    // dotted tail after the last entry
+  const WIDE = 640;   // list width from which entries are laid out as rows
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
-  // As many compact columns as fit (up to five); one column on phones.
-  function columnsFor(width) {
-    const n = Math.floor((width - SIDE_PAD + COL_GAP) / (MIN_COL + COL_GAP));
-    return Math.max(1, Math.min(5, n));
-  }
 
   // "2026-08-28" -> "28.08.2026"; anything else is shown as given.
   function formatDate(d) {
@@ -42,25 +34,26 @@
     return s ? `<span class="status-tag ${status}${extra}">${s.icon}${s.text}</span>` : "";
   }
 
-  // Each entry shows just its label, tile and title; the date, summary and
-  // topics appear in a card on hover or keyboard focus.
+  // Each entry shows its status, label, tile, title and date; the summary
+  // and topics appear in a card on hover or keyboard focus.
   function itemHtml(item, withStatus) {
     const { label, title } = split(item);
     const popId = `tl-pop-${esc(item.id)}`;
     const topics = (item.topics || []).map(t => `<span>${esc(t)}</span>`).join("");
     const date = formatDate(item.date);
-    // Every entry gets a status slot when any entry has one, so the nodes
-    // stay on one line.
+    // Every entry gets a status slot when any entry has one, so the columns
+    // line up.
     const status = withStatus ? (statusHtml(item.status) || '<span class="status-tag none" aria-hidden="true">&nbsp;</span>') : "";
     return `
       <div class="tl-item${item.status ? ` is-${esc(item.status)}` : ""}">
-        ${status}
         <span class="tl-node" aria-hidden="true"></span>
+        ${status}
         <span class="tl-label">${esc(label)}</span>
         <button type="button" class="tl-card" data-id="${esc(item.id)}" aria-describedby="${popId}">
           ${Thumbs.html(item)}
           <span class="tl-title">${title}</span>
         </button>
+        <span class="tl-date">${date && date !== label ? esc(date) : ""}</span>
         <div class="tl-pop" id="${popId}" role="tooltip">
           <span class="tl-pop-meta">${esc(label)}${date && date !== label ? ` &middot; ${esc(date)}` : ""}${item.status ? ` &middot; ${STATUS[item.status] ? STATUS[item.status].text : esc(item.status)}` : ""}</span>
           <span class="tl-pop-title">${title}</span>
@@ -71,25 +64,8 @@
       </div>`;
   }
 
-  // Place entries so each row continues where the previous one ended.
-  function place(el) {
-    const width = el.clientWidth;
-    if (!width) return 0;
-    const n = columnsFor(width);
-    el.classList.toggle("tl-vertical", n === 1);
-    el.style.gridTemplateColumns = n === 1 ? "" : `repeat(${n}, minmax(0, 1fr))`;
-    el.querySelectorAll(".tl-item").forEach((item, i) => {
-      const row = Math.floor(i / n), c = i % n;
-      item.style.gridRow = n === 1 ? "" : String(row + 1);
-      const col = row % 2 === 0 ? c + 1 : n - c;
-      item.style.gridColumn = n === 1 ? "" : String(col);
-      // Hover cards in the right-hand columns open leftwards so they stay on screen.
-      item.classList.toggle("tl-pop-left", n > 1 && col > n / 2 + 0.5);
-    });
-    return n;
-  }
-
-  function drawLine(el, n) {
+  // Draw the line from the first node down through the last, plus the tail.
+  function drawLine(el) {
     const svg = el.querySelector(".tl-line");
     const box = el.getBoundingClientRect();
     const W = el.clientWidth, H = el.offsetHeight;
@@ -98,62 +74,36 @@
       return [Math.round(r.left + r.width / 2 - box.left), Math.round(r.top + r.height / 2 - box.top)];
     });
     if (!pts.length || !W) { svg.innerHTML = ""; return; }
-
-    let d = `M${pts[0][0]},${pts[0][1]}`;
-    let tail = "";
-    if (n === 1) {
-      const [x, y] = pts[pts.length - 1];
-      d += ` L${x},${y}`;
-      tail = `M${x},${y} L${x},${y + TAIL}`;
-    } else {
-      const xL = GUTTER, xR = W - GUTTER;
-      const rows = [];
-      pts.forEach((p, i) => { const r = Math.floor(i / n); (rows[r] = rows[r] || []).push(p); });
-      rows.forEach((row, r) => {
-        const y = row[0][1];
-        const rightward = r % 2 === 0;
-        if (r < rows.length - 1) {
-          const ny = rows[r + 1][0][1];
-          d += rightward
-            ? ` L${xR - R},${y} A${R},${R} 0 0 1 ${xR},${y + R} L${xR},${ny - R} A${R},${R} 0 0 1 ${xR - R},${ny}`
-            : ` L${xL + R},${y} A${R},${R} 0 0 0 ${xL},${y + R} L${xL},${ny - R} A${R},${R} 0 0 0 ${xL + R},${ny}`;
-        } else {
-          const [x] = row[row.length - 1];
-          d += ` L${x},${y}`;
-          const tx = rightward ? Math.min(xR, x + TAIL) : Math.max(xL, x - TAIL);
-          tail = `M${x},${y} L${tx},${y}`;
-        }
-      });
-    }
+    const [x0, y0] = pts[0];
+    const [x1, y1] = pts[pts.length - 1];
     svg.setAttribute("width", W);
     svg.setAttribute("height", H);
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    svg.innerHTML = `<path class="tl-path" d="${d}"/>${tail ? `<path class="tl-tail" d="${tail}"/>` : ""}`;
+    svg.innerHTML = `<path class="tl-path" d="M${x0},${y0} L${x1},${y1}"/><path class="tl-tail" d="M${x1},${y1} L${x1},${y1 + TAIL}"/>`;
   }
 
   function layout(el) {
-    if (!el.querySelector(".tl-item")) return;
-    const n = place(el);
-    if (n) drawLine(el, n);
+    if (!el.querySelector(".tl-item") || !el.clientWidth) return;
+    el.classList.toggle("tl-wide", el.clientWidth >= WIDE);
+    drawLine(el);
   }
 
   // Render `items` into `el` as a timeline; onOpen(id) runs when one is clicked.
   function render(el, items, onOpen, emptyText = "Nothing here yet.") {
     el.classList.add("timeline");
     if (!items.length) {
-      el.classList.remove("tl-vertical");
-      el.style.gridTemplateColumns = "";
       el.innerHTML = `<p class="list-empty">${emptyText}</p>`;
       return;
     }
     const withStatus = items.some(it => it.status);
+    el.classList.toggle("tl-has-status", withStatus);
     el.innerHTML = `<svg class="tl-line" aria-hidden="true"></svg>${items.map(it => itemHtml(it, withStatus)).join("")}`;
     Thumbs.mount(el);
     el.querySelectorAll(".tl-card").forEach(btn => btn.addEventListener("click", () => onOpen(btn.dataset.id)));
     layout(el);
     if (!el._tlRO && "ResizeObserver" in window) {
-      // Re-place and redraw whenever the list changes size (including when a
-      // hidden list is shown again).
+      // Redraw whenever the list changes size (including when a hidden list
+      // is shown again).
       el._tlRO = new ResizeObserver(() => layout(el));
       el._tlRO.observe(el);
     }

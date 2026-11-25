@@ -1,4 +1,4 @@
-const SECTIONS = ["articles", "projects", "notes", "publications", "about"];
+const SECTIONS = ["articles", "projects", "notes", "publications", "misc", "about"];
 const DEFAULT_SECTION = "notes";
 const IFRAME_ASSET_VERSION = "6";
 
@@ -67,6 +67,7 @@ function escapeHtml(s) {
 
 // "1 note", "7 notes" (plural is the section name: notes, articles, projects).
 function countLabel(n, plural) {
+  if (plural === "misc") plural = "items";
   return `${n} ${n === 1 ? plural.slice(0, -1) : plural}`;
 }
 
@@ -93,6 +94,14 @@ const articleDownloadsEl = document.getElementById("article-downloads");
 const articlePdfViewerEl = document.getElementById("article-pdf-viewer");
 const articleCommentsEl = document.getElementById("article-comments");
 const backToArticlesBtn = document.getElementById("back-to-articles");
+
+const miscListEl = document.getElementById("misc-list");
+const miscDetailEl = document.getElementById("misc-detail");
+const miscTitleEl = document.getElementById("misc-title");
+const miscDownloadsEl = document.getElementById("misc-downloads");
+const miscPdfViewerEl = document.getElementById("misc-pdf-viewer");
+const miscCommentsEl = document.getElementById("misc-comments");
+const backToMiscBtn = document.getElementById("back-to-misc");
 
 const projectsListEl = document.getElementById("projects-list");
 const projectDetailEl = document.getElementById("project-detail");
@@ -631,22 +640,27 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
     return [...counts.entries()].sort((a, b) => b[1] - a[1]);
   }
 
-  function chip(value, label, n, on, level) {
-    return `<button type="button" class="topic-chip${level === "sub" ? " sub" : ""}${on ? " active" : ""}" data-${level}="${escapeHtml(value)}" aria-pressed="${on}">${escapeHtml(label)}<span class="topic-chip-count">${n}</span></button>`;
+  function chip(value, label, n, on, level, small) {
+    return `<button type="button" class="topic-chip${small ? " sub" : ""}${on ? " active" : ""}" data-${level}="${escapeHtml(value)}" aria-pressed="${on}">${escapeHtml(label)}<span class="topic-chip-count">${n}</span></button>`;
   }
 
   function renderChips(items) {
     if (!chipsEl) return;
     const branches = tally(items.map(branchOf).filter(Boolean));
     if (!branches.length) { chipsEl.hidden = true; return; }
-    let html = `<div class="topic-row">${chip("all", "All", items.length, activeBranch === "all", "branch")}${branches.map(([b, n]) => chip(b, b, n, b === activeBranch, "branch")).join("")}</div>`;
+    // With a single branch the branch row adds nothing: go straight to its
+    // sub-topics, shown as the main row.
+    const single = branches.length === 1;
+    if (single) activeBranch = branches[0][0];
+    let html = single ? "" : `<div class="topic-row">${chip("all", "All", items.length, activeBranch === "all", "branch")}${branches.map(([b, n]) => chip(b, b, n, b === activeBranch, "branch")).join("")}</div>`;
     if (activeBranch !== "all") {
       const inBranch = items.filter(it => branchOf(it) === activeBranch);
       const subs = tally(inBranch.flatMap(it => (it.topics || []).slice(1)));
       if (subs.length) {
-        html += `<div class="topic-row sub">${chip("all", `All ${activeBranch}`, inBranch.length, activeSub === "all", "sub")}${subs.map(([t, n]) => chip(t, t, n, t === activeSub, "sub")).join("")}</div>`;
+        html += `<div class="topic-row${single ? "" : " sub"}">${chip("all", single ? "All" : `All ${activeBranch}`, inBranch.length, activeSub === "all", "sub", !single)}${subs.map(([t, n]) => chip(t, t, n, t === activeSub, "sub", !single)).join("")}</div>`;
       }
     }
+    if (!html) { chipsEl.hidden = true; return; }
     chipsEl.innerHTML = html;
     chipsEl.hidden = false;
     chipsEl.querySelectorAll("[data-branch]").forEach(btn => btn.addEventListener("click", () => {
@@ -677,7 +691,7 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
     if (searchEl) searchEl.closest(".search").hidden = !allItems.length;
     const empty = !allItems.length
       ? (listEl.dataset.empty || `No ${kind} here yet.`)
-      : query ? `No ${kind} match “${escapeHtml(searchEl.value.trim())}”.` : `No ${kind} here yet.`;
+      : query ? `Nothing matches “${escapeHtml(searchEl.value.trim())}”.` : `No ${kind} here yet.`;
     Timeline.render(listEl, items, id => { location.hash = `#${kind}/${id}`; }, empty);
 
     lastRender = [items, allItems, empty];
@@ -731,7 +745,11 @@ function createPdfLibrary({ kind, contentUrl, listEl, detailEl, titleEl, downloa
 
   backBtn.addEventListener("click", () => { location.hash = `#${kind}`; });
 
-  return { showItem, enterList };
+  async function has(id) {
+    return (await loadIndex()).some(x => x.id === id);
+  }
+
+  return { showItem, enterList, has };
 }
 
 const notesLibrary = createPdfLibrary({
@@ -756,6 +774,19 @@ const articlesLibrary = createPdfLibrary({
   pdfViewerEl: articlePdfViewerEl,
   commentsEl: articleCommentsEl,
   backBtn: backToArticlesBtn,
+});
+
+// Everything outside machine learning (maths notes, older write-ups).
+const miscLibrary = createPdfLibrary({
+  kind: "misc",
+  contentUrl: "content/misc.json",
+  listEl: miscListEl,
+  detailEl: miscDetailEl,
+  titleEl: miscTitleEl,
+  downloadsEl: miscDownloadsEl,
+  pdfViewerEl: miscPdfViewerEl,
+  commentsEl: miscCommentsEl,
+  backBtn: backToMiscBtn,
 });
 
 let projectsIndex = null;
@@ -1047,8 +1078,14 @@ async function route() {
   const [section, sub] = hash.split("/");
   const validSection = SECTIONS.includes(section) ? section : DEFAULT_SECTION;
 
+  // Old links to maths notes and Cancelling Sequences (now under Misc).
+  if (sub && (validSection === "notes" || validSection === "projects") && await miscLibrary.has(sub)) {
+    location.replace(`#misc/${sub}`);
+    return;
+  }
+
   showPanel(validSection);
-  document.body.classList.toggle("note-reading", (validSection === "notes" || validSection === "articles") && !!sub);
+  document.body.classList.toggle("note-reading", ["notes", "articles", "misc"].includes(validSection) && !!sub);
   document.body.classList.toggle("project-reading", validSection === "projects" && !!sub);
 
   if (validSection === "notes") {
@@ -1064,6 +1101,14 @@ async function route() {
       await articlesLibrary.showItem(sub);
     } else {
       await articlesLibrary.enterList();
+    }
+  }
+
+  if (validSection === "misc") {
+    if (sub) {
+      await miscLibrary.showItem(sub);
+    } else {
+      await miscLibrary.enterList();
     }
   }
 
